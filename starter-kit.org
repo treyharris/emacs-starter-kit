@@ -406,12 +406,6 @@ Located in [[file:starter-kit-latex.org][starter-kit-latex]]
 After we've loaded all the Starter Kit defaults, lets load the User's stuff.
 #+srcname: starter-kit-load-files
 #+begin_src emacs-lisp
-  (if (file-exists-p elisp-source-dir)
-      (let ((default-directory elisp-source-dir))
-        (normal-top-level-add-subdirs-to-load-path)))
-  (if (file-exists-p system-specific-config) (load system-specific-config))
-  (if (file-exists-p system-specific-literate-config)
-      (org-babel-load-file system-specific-literate-config))
   (if (file-exists-p user-specific-config) (load user-specific-config))
   (if (file-exists-p user-specific-literate-config)
       (org-babel-load-file user-specific-literate-config))
@@ -419,6 +413,12 @@ After we've loaded all the Starter Kit defaults, lets load the User's stuff.
     (let ((default-directory user-specific-dir))
       (mapc #'load (directory-files user-specific-dir nil ".*el$"))
       (mapc #'org-babel-load-file (directory-files user-specific-dir nil ".*org$"))))
+  (if (file-exists-p elisp-source-dir)
+      (let ((default-directory elisp-source-dir))
+        (normal-top-level-add-subdirs-to-load-path)))
+  (if (file-exists-p system-specific-config) (load system-specific-config))
+  (if (file-exists-p system-specific-literate-config)
+      (org-babel-load-file system-specific-literate-config))
 #+end_src
 
 
