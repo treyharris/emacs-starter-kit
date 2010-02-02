@@ -1,0 +1,287 @@
+#+TITLE: Emacs Starter Kit
+#+SEQ_TODO: PROPOSED TODO STARTED | DONE DEFERRED REJECTED
+#+OPTIONS: H:2 num:nil toc:t
+#+STARTUP: oddeven
+
+* My coding style
+#+srcname: ahyatt-coding-style
+#+begin_src emacs-lisp
+  (setq-default show-trailing-whitespace t)
+#+end_src
+* My org setup
+This has been precisely fine-tuned for how I like to work with org.
+*** Loading extras
+I wrote org-screen, and I do use it occasionally.
+#+srcname: ahyatt-org-requires
+#+begin_src emacs-lisp 
+  (require 'org-screen)
+#+end_src
+*** Clock setting
+I like to time tasks, display the time in the modeline, and have diary
+entries in the modeline.
+#+srcname: ahyatt-org-clock
+#+begin_src emacs-lisp 
+  (setq org-clock-string-limit 50
+        org-log-done t
+        org-agenda-include-diary t
+        org-deadline-warning-days 1
+        org-agenda-start-with-log-mode nil)
+#+end_src
+*** Workflow
+#+srcname: ahyatt-org-workflow
+#+begin_src emacs-lisp 
+  (setq org-todo-keywords '((sequence "TODO(t)" "STARTED(s)"
+                                      "WAITING(w@/!)" "|" "DONE(d)"
+                                      "OBSOLETE(o)"))
+        org-agenda-custom-commands
+        '(("w" todo "WAITING" nil)
+          ("n" tags-todo "+someday"
+           ((org-show-hierarchy-above nil) (org-agenda-todo-ignore-with-date t)
+            (org-agenda-tags-todo-honor-ignore-options t)))
+          ("l" "Agenda and live tasks" ((agenda "")
+                                        (tags-todo "-someday"))))
+        org-enforce-todo-dependencies t
+        org-agenda-dim-blocked-tasks 'invisible
+        org-agenda-skip-deadline-if-done 't
+        org-agenda-skip-scheduled-if-done 't)
+#+end_src
+*** Navigation
+#+srcname: ahyatt-org-navigation
+#+begin_src emacs-lisp 
+  (setq org-use-speed-commands t
+        org-refile-targets '((nil . (:maxlevel . 3)))
+        org-link-frame-setup '((gnus . gnus)
+                               (file . find-file-other-window))
+        org-use-speed-commands t
+        org-completion-use-ido t
+        org-use-fast-todo-selection t)
+  (global-set-key [M-f11] 'org-agenda-goto-today)
+  (global-set-key [print] 'org-agenda-goto-today)
+#+end_src
+*** Remember integration
+#+srcname: ahyatt-org-remember
+#+begin_src emacs-lisp
+  (setq remember-annotation-functions '(org-remember-annotation)
+        remember-handler-functions '(org-remember-handler)
+        org-remember-templates
+        '(("Note" ?n "* %a%?\n%u\n%i" "~/org/work.org" "Unfiled notes")
+          ("Journal" ?j "* %T %?" "~/org/notes.org" date-tree)
+          ("Child todo" ?c "* TODO %?\n%a" "~/org/work.org" "Inbox")
+          ("Todo" ?t "* TODO %?\n%a" "~/org/work.org" "Inbox")
+          ("Act on email" ?a "* TODO Process [%a]\n%!" "~/org/work.org" "Inbox"
+           (mime-view-mode wl-summary-mode gnus-summary-mode gnus-article-mode))))
+  (add-hook 'remember-mode-hook 'org-remember-apply-template)
+  (define-key global-map "\C-c\C-r" 'org-remember)
+#+end_src
+*** Jabber integration
+Some code to colorize tags that are jabber names based on
+availability.
+#+srcname: ahyatt-org-jabber
+#+begin_src emacs-lisp 
+  (defun ash-jabber-colorize-tags ()
+    (let ((contact-hash (make-hash-table :test 'equal)))
+      (dolist (jc jabber-connections)
+        (dolist (contact (plist-get (fsm-get-state-data jc) :roster))
+          (puthash (car (split-string (symbol-name contact) "@")) contact contact-hash)))
+      (save-excursion
+        (goto-char (point-min))
+        (while (re-search-forward ":\\(\\w+\\):" nil t)
+          (let ((tag (match-string-no-properties 1)))
+            (when (and tag (gethash tag contact-hash))
+              (let* ((js (jabber-jid-symbol (gethash tag contact-hash)))
+                     (connected (get js 'connected))
+                     (show (get js 'show)))
+                (if connected
+                    (let ((o (make-overlay (match-beginning 1) (- (point) 1))))
+                      (overlay-put o 'face
+                                   (cons 'foreground-color
+                                         (cond ((equal "away" show)
+                                                "orange")
+                                               ((equal "dnd" show)
+                                                "red")
+                                               (t "green")))))))))
+          (backward-char)))))
+#+end_src
+***** TODO Move this into work-specific org file, plus integrate italic
+* Misc customization
+#+srcname: ahyatt-misc
+#+begin_src emacs-lisp
+  (savehist-mode 1)
+  
+  ;;; This is how we can get utf8 on terminals with emacsclient
+  (add-to-list 'after-make-frame-functions
+               (lambda (frame) (select-frame frame)
+                 (set-terminal-coding-system 'utf-8)))
+  (setq ibuffer-saved-filter-groups
+        (quote (("default"
+                 ("dired" (mode . dired-mode))
+                 ("java" (mode . java-mode))
+                 ("shell" (mode . shell-mode))
+                 ("eshell" (mode . eshell-mode))
+                 ("lisp" (mode . emacs-lisp-mode))
+                 ("erc" (mode . erc-mode))
+                 ("org" (mode . org-mode))
+                 ("git" (mode . git-status-mode))
+                 ("c++" (or
+                         (mode . cc-mode)
+                         (mode . c++-mode)))
+                 ("emacs" (or
+                           (name . "^\\*scratch\\*$")
+                           (name . "^\\*Messages\\*$")))
+                 ("gnus" (or
+                          (mode . message-mode)
+                          (mode . bbdb-mode)
+                          (mode . mail-mode)
+                          (mode . gnus-group-mode)
+                          (mode . gnus-summary-mode)
+                          (mode . gnus-article-mode)
+                          (name . "^\\.bbdb$")
+                          (name . "^\\.newsrc-dribble"))))))
+        ibuffer-sorting-mode 'recency)
+  
+  (add-hook 'ibuffer-mode-hook
+            (lambda ()
+              (ibuffer-switch-to-saved-filter-groups "default")))
+  
+  (add-hook 'dired-mode-hook
+            '(lambda ()
+               (define-key dired-mode-map "e" 'wdired-change-to-wdired-mode)))
+  
+  (display-time-mode)
+  
+  (define-key global-map "\C-x\C-j" 'dired-jump)
+#+end_src
+
+* Prettiness
+#+srcname: ahyatt-pretiness
+#+begin_src emacs-lisp
+  (require 'zenburn)
+  (zenburn)
+  
+  ;; useful parenthesis highlight
+  (require 'highlight-parentheses)
+  (add-hook 'emacs-lisp-mode-hook 'highlight-parentheses-mode)
+#+end_src
+* Jabber customizations
+#+srcname: ahyatt-jabber
+#+begin_src emacs-lisp
+  (require 'jabber)
+  
+  ;; I don't like the jabber modeline having counts, it takes up too
+  ;; much room.
+  (defadvice jabber-mode-line-count-contacts (around ash-remove-jabber-counts
+                                                     (&rest ignore))
+    "Override for count contacts, to remove contacts from modeline"
+    (setq ad-return-value ""))
+  (ad-activate 'jabber-mode-line-count-contacts)
+  (add-hook 'jabber-chat-mode-hook 'flyspell-mode)
+#+end_src
+* Various packages
+#+srcname: ahyatt-smex
+#+begin_src emacs-lisp
+  (require 'smex)
+  (add-hook 'after-init-hook 'smex-initialize)
+  (global-set-key (kbd "M-x") 'smex)
+  (global-set-key (kbd "M-X") 'smex-major-mode-commands)
+  (global-set-key (kbd "C-c M-x") 'smex-update-and-run)
+  ;; This is the old M-x.
+  (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+#+end_src
+* Keychord
+#+srcname: ahyatt-keychord
+#+begin_src emacs-lisp
+  (require 'key-chord)
+  (key-chord-mode 1)
+  (key-chord-define-global "jk" 'dabbrev-expand)
+  (key-chord-define-global "l;" 'magit-status)
+  (key-chord-define-global "`1" 'yas/expand)
+  (key-chord-define-global "-=" (lambda () (interactive) (switch-to-buffer "*compilation*")))
+  
+  (key-chord-define-global "xb" 'recentf-ido-find-file)
+  (key-chord-define-global "xg" 'smex)
+  (key-chord-define-global "XG" 'smex-major-mode-commands)
+#+end_src
+* Gnus
+This is for gnus customization, not anything server-specific.
+#+srcname: ahyatt-gnus
+#+begin_src emacs-lisp
+  (set-face-foreground 'gnus-group-mail-3 "blue3")
+  (setq bbdb-always-add-addresses 'ash-add-addresses-p)
+  (setq bbdb-complete-name-allow-cycling t)
+  (setq bbdb-completion-display-record nil)
+  (setq bbdb-silent-running t)
+  (setq bbdb-use-pop-up nil)
+  (setq bbdb/mail-auto-create-p 'bbdb-ignore-some-messages-hook)
+  (setq bbdb/news-auto-create-p 'bbdb-ignore-some-messages-hook)
+  
+  (setq mm-text-html-renderer 'w3m-standalone)
+  (setq mm-attachment-override-types '("image/.*"))
+  ;; No HTML mail
+  (setq mm-discouraged-alternatives '("text/html" "text/richtext"))
+  (setq gnus-message-archive-group "Sent")
+  
+  (setq gnus-ignored-mime-types '("text/x-vcard"))
+  (setq gnus-agent-queue-mail nil)
+  (setq gnus-keep-same-level 't)
+  
+  (setq gnus-summary-ignore-duplicates t)
+  
+  (setq gnus-group-use-permanent-levels 't)
+  (setq gnus-summary-line-format "%-10&user-date;%U%R%z%I%(%[%-23,23f%]%) %s\n")
+  
+  ;; From http://emacs.wordpress.com/2008/04/21/two-gnus-tricks/
+  (setq gnus-user-date-format-alist
+        '(((gnus-seconds-today) . "Today, %H:%M")
+          ((+ 86400 (gnus-seconds-today)) . "Yesterday, %H:%M")
+          (604800 . "%A %H:%M") ;;that's one week
+          ((gnus-seconds-month) . "%A %d")
+          ((gnus-seconds-year) . "%B %d")
+          (t . "%B %d '%y"))) ;;this one is used when no other does match
+  
+  ;; From http://www.emacswiki.org/emacs/init-gnus.el
+  (setq gnus-summary-line-format "%U%R%z%O %{%16&user-date;%}   %{%-20,20n%} %{%ua%} %B %(%I%-60,60s%)\n")
+  (defun gnus-user-format-function-a (header) 
+    (let ((myself (concat "<" user-mail-address ">"))
+          (references (mail-header-references header))
+          (message-id (mail-header-id header)))
+      (if (or (and (stringp references)
+                   (string-match myself references))
+              (and (stringp message-id)
+                   (string-match myself message-id)))
+          "X" "│")))
+  
+  (setq gnus-summary-same-subject "")
+  (setq gnus-sum-thread-tree-indent "    ")
+  (setq gnus-sum-thread-tree-single-indent "◎ ")
+  (setq gnus-sum-thread-tree-root "● ")
+  (setq gnus-sum-thread-tree-false-root "☆")
+  (setq gnus-sum-thread-tree-vertical "│")
+  (setq gnus-sum-thread-tree-leaf-with-other "├─► ")
+  (setq gnus-sum-thread-tree-single-leaf "╰─► ")
+  
+  (setq gnus-single-article-buffer nil)
+  
+  (provide 'ash-gnus)
+#+end_src
+
+* Terminal
+#+srcname: ahyatt-terminal
+#+begin_src emacs-lisp 
+  (defun ash-term-hooks ()
+    ;; dabbrev-expand in term
+    (define-key term-raw-escape-map "/"
+      (lambda ()
+        (interactive)
+        (let ((beg (point)))
+          (dabbrev-expand nil)
+          (kill-region beg (point)))
+        (term-send-raw-string (substring-no-properties (current-kill 0)))))
+    ;; yank in term (bound to C-c C-y)
+    (define-key term-raw-escape-map "\C-y"
+      (lambda ()
+         (interactive)
+         (term-send-raw-string (current-kill 0))))
+    (setq term-default-bg-color (face-background 'default))
+    (setq term-default-fg-color (face-foreground 'default)))
+  (add-hook 'term-mode-hook 'ash-term-hooks)
+#+end_src
