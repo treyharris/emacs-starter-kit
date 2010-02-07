@@ -3,6 +3,12 @@
 #+OPTIONS: H:2 num:nil toc:t
 #+STARTUP: oddeven
 
+* Who am I?
+#+srcname: ahyatt-who
+#+begin_src emacs-lisp 
+  (setq wave-client-user "ahyatt")
+#+end_src
+
 * My coding style
 #+srcname: ahyatt-coding-style
 #+begin_src emacs-lisp
@@ -25,6 +31,7 @@ entries in the modeline.
         org-log-done t
         org-agenda-include-diary t
         org-deadline-warning-days 1
+        org-clock-idle-time 10
         org-agenda-start-with-log-mode nil)
 #+end_src
 *** Workflow
@@ -38,10 +45,13 @@ entries in the modeline.
           ("n" tags-todo "+someday"
            ((org-show-hierarchy-above nil) (org-agenda-todo-ignore-with-date t)
             (org-agenda-tags-todo-honor-ignore-options t)))
+          ("0" "Critical tasks" ((agenda "") (tags-todo "+p0")))
           ("l" "Agenda and live tasks" ((agenda "")
                                         (tags-todo "-someday"))))
         org-enforce-todo-dependencies t
+        org-agenda-todo-ignore-scheduled t
         org-agenda-dim-blocked-tasks 'invisible
+        org-agenda-tags-todo-honor-ignore-options t
         org-agenda-skip-deadline-if-done 't
         org-agenda-skip-scheduled-if-done 't)
 #+end_src
@@ -55,8 +65,17 @@ entries in the modeline.
         org-use-speed-commands t
         org-completion-use-ido t
         org-use-fast-todo-selection t)
-  (global-set-key [M-f11] 'org-agenda-goto-today)
-  (global-set-key [print] 'org-agenda-goto-today)
+  
+  (defun ash-agenda ()
+    (interactive)
+    (let ((buf (get-buffer "*Org Agenda*")))
+      (if buf
+          (switch-to-buffer buf)
+        (org-agenda-goto-today))
+      (ash-jabber-colorize-tags)))
+  
+  (global-set-key [M-f11] 'ash-agenda)
+  (global-set-key [print] 'ash-agenda)
 #+end_src
 *** Remember integration
 #+srcname: ahyatt-org-remember
@@ -107,11 +126,17 @@ availability.
 #+srcname: ahyatt-misc
 #+begin_src emacs-lisp
   (savehist-mode 1)
+  (recentf-mode 1)
+  
+  (defun ash-new-frame (frame)
+    (select-frame frame)
+    (set-terminal-coding-system 'utf-8)
+    (tool-bar-mode -1)
+    (scroll-bar-mode -1))
   
   ;;; This is how we can get utf8 on terminals with emacsclient
-  (add-to-list 'after-make-frame-functions
-               (lambda (frame) (select-frame frame)
-                 (set-terminal-coding-system 'utf-8)))
+  (add-to-list 'after-make-frame-functions 'ash-new-frame)
+  
   (setq ibuffer-saved-filter-groups
         (quote (("default"
                  ("dired" (mode . dired-mode))
@@ -165,6 +190,8 @@ availability.
 * Jabber customizations
 #+srcname: ahyatt-jabber
 #+begin_src emacs-lisp
+  (add-to-list 'load-path
+               (expand-file-name (concat elisp-source-dir "/emacs-jabber")))
   (require 'jabber)
   
   ;; I don't like the jabber modeline having counts, it takes up too
@@ -175,6 +202,14 @@ availability.
     (setq ad-return-value ""))
   (ad-activate 'jabber-mode-line-count-contacts)
   (add-hook 'jabber-chat-mode-hook 'flyspell-mode)
+  (jabber-autoaway-start)
+  
+  (setq jabber-alert-message-hooks '(jabber-message-echo jabber-message-scroll)
+        jabber-alert-muc-hooks '(jabber-muc-scroll)
+        jabber-alert-presence-hooks (quote (jabber-presence-update-roster))
+        jabber-autoaway-method (quote jabber-current-idle-time)
+        jabber-mode-line-mode t
+        jabber-cvard-avatars-retrieve t)
 #+end_src
 * Various packages
 #+srcname: ahyatt-smex
@@ -258,10 +293,8 @@ This is for gnus customization, not anything server-specific.
   (setq gnus-sum-thread-tree-vertical "│")
   (setq gnus-sum-thread-tree-leaf-with-other "├─► ")
   (setq gnus-sum-thread-tree-single-leaf "╰─► ")
-  
+
   (setq gnus-single-article-buffer nil)
-  
-  (provide 'ash-gnus)
 #+end_src
 
 * Terminal
