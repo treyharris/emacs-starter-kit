@@ -128,15 +128,6 @@ availability.
   (savehist-mode 1)
   (recentf-mode 1)
   
-  (defun ash-new-frame (frame)
-    (select-frame frame)
-    (set-terminal-coding-system 'utf-8)
-    (tool-bar-mode -1)
-    (scroll-bar-mode -1))
-  
-  ;;; This is how we can get utf8 on terminals with emacsclient
-  (add-to-list 'after-make-frame-functions 'ash-new-frame)
-  
   (setq ibuffer-saved-filter-groups
         (quote (("default"
                  ("dired" (mode . dired-mode))
@@ -182,6 +173,19 @@ availability.
 #+begin_src emacs-lisp
   (require 'zenburn)
   (zenburn)
+  
+  ;; fixes to zenburn
+  (set-face-attribute 'gnus-group-mail-3 t :foreground "lightblue" :weight 'bold)
+  
+  (defun ash-new-frame (frame)
+    (select-frame frame)
+    (set-terminal-coding-system 'utf-8)
+    (tool-bar-mode -1)
+  
+    (scroll-bar-mode -1))
+  
+  ;;; This is how we can get utf8 on terminals with emacsclient
+  (add-to-list 'after-make-frame-functions 'ash-new-frame)
   
   ;; useful parenthesis highlight
   (require 'highlight-parentheses)
