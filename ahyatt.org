@@ -196,7 +196,7 @@ availability.
 #+begin_src emacs-lisp
   (add-to-list 'load-path
                (expand-file-name (concat elisp-source-dir "/emacs-jabber")))
-  (require 'jabber)
+  (require 'jabber-autoloads)
   
   ;; I don't like the jabber modeline having counts, it takes up too
   ;; much room.
