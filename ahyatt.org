@@ -13,6 +13,7 @@
 #+srcname: ahyatt-coding-style
 #+begin_src emacs-lisp
   (setq-default show-trailing-whitespace t)
+  (add-hook 'c-mode-hook 'highlight-80+-mode)
 #+end_src
 * My org setup
 This has been precisely fine-tuned for how I like to work with org.
@@ -90,7 +91,7 @@ entries in the modeline.
           ("Act on email" ?a "* TODO Process [%a]\n%!" "~/org/work.org" "Inbox"
            (mime-view-mode wl-summary-mode gnus-summary-mode gnus-article-mode))))
   (add-hook 'remember-mode-hook 'org-remember-apply-template)
-  (define-key global-map "\C-c\C-r" 'org-remember)
+  (define-key global-map [f12] 'org-remember)
 #+end_src
 *** Jabber integration
 Some code to colorize tags that are jabber names based on
@@ -176,6 +177,8 @@ availability.
   
   ;; fixes to zenburn
   (set-face-attribute 'gnus-group-mail-3 t :foreground "lightblue" :weight 'bold)
+  (set-face-attribute 'jabber-activity-personal-face nil :foreground "lightblue")
+  (set-face-attribute 'jabber-rare-time-face t :foreground "dark grey")
   
   (defun ash-new-frame (frame)
     (select-frame frame)
