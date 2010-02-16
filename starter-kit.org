@@ -281,8 +281,10 @@ project is not in elpa.
 
 #+srcname: starter-kit-load-elisp-dir
 #+begin_src emacs-lisp
-(setq elisp-source-dir (concat dotfiles-dir "src"))
-(add-to-list 'load-path elisp-source-dir)
+  (setq elisp-source-dir (concat dotfiles-dir "src"))
+  (add-to-list 'load-path elisp-source-dir)
+  (dolist (dir (directory-files elisp-source-dir 'full))
+    (add-to-list 'load-path elisp-source-dir))
 #+end_src
 
 ** Load the rest of the starter kit core
