@@ -14,6 +14,7 @@
 #+begin_src emacs-lisp
   (setq-default show-trailing-whitespace t)
   (add-hook 'c-mode-hook 'highlight-80+-mode)
+  (add-hook 'c++-mode-hook 'highlight-80+-mode)
 #+end_src
 * My org setup
 This has been precisely fine-tuned for how I like to work with org.
@@ -128,6 +129,8 @@ availability.
 #+begin_src emacs-lisp
   (savehist-mode 1)
   (recentf-mode 1)
+  ;; Recentf is useless without saving frequently
+  (run-with-idle-timer 1 nil 'recentf-save-list)
   
   (setq ibuffer-saved-filter-groups
         (quote (("default"
@@ -168,33 +171,10 @@ availability.
   
   (define-key global-map "\C-x\C-j" 'dired-jump)
 #+end_src
-
-* Prettiness
-#+srcname: ahyatt-pretiness
-#+begin_src emacs-lisp
-  (require 'zenburn)
-  (zenburn)
-  
-  ;; fixes to zenburn
-  (set-face-attribute 'gnus-group-mail-3 t :foreground "lightblue" :weight 'bold)
-  (set-face-attribute 'jabber-activity-personal-face nil :foreground "lightblue")
-  (set-face-attribute 'jabber-rare-time-face t :foreground "dark grey")
-  
-  (defun ash-new-frame (frame)
-    (select-frame frame)
-    (set-terminal-coding-system 'utf-8)
-    (tool-bar-mode -1)
-  
-    (scroll-bar-mode -1))
-  
-  ;;; This is how we can get utf8 on terminals with emacsclient
-  (add-to-list 'after-make-frame-functions 'ash-new-frame)
-  
-  ;; useful parenthesis highlight
-  (require 'highlight-parentheses)
-  (add-hook 'emacs-lisp-mode-hook 'highlight-parentheses-mode)
-#+end_src
 * Jabber customizations
+I've stopped using Jabber, since it seems to slow down emacs,
+sometimes dramatically.  Still, it's nice to have in case I need it
+again.
 #+srcname: ahyatt-jabber
 #+begin_src emacs-lisp
   (add-to-list 'load-path
@@ -228,6 +208,12 @@ availability.
   (global-set-key (kbd "C-c M-x") 'smex-update-and-run)
   ;; This is the old M-x.
   (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+  
+  ;; edit server, a Chrome extension
+  (if (and (daemonp) (locate-library "edit-server"))
+      (progn
+        (require 'edit-server)
+        (edit-server-start)))
 #+end_src
 * Keychord
 #+srcname: ahyatt-keychord
@@ -247,7 +233,6 @@ availability.
 This is for gnus customization, not anything server-specific.
 #+srcname: ahyatt-gnus
 #+begin_src emacs-lisp
-  (set-face-foreground 'gnus-group-mail-3 "blue3")
   (setq bbdb-always-add-addresses 'ash-add-addresses-p)
   (setq bbdb-complete-name-allow-cycling t)
   (setq bbdb-completion-display-record nil)
@@ -324,4 +309,61 @@ This is for gnus customization, not anything server-specific.
     (setq term-default-bg-color (face-background 'default))
     (setq term-default-fg-color (face-foreground 'default)))
   (add-hook 'term-mode-hook 'ash-term-hooks)
+#+end_src
+
+* Speed tweeks
+#+srcname: ahyatt-speed
+#+begin_src emacs-lisp 
+  (setq ido-enable-tramp-completion nil)
+#+end_src
+* ERC
+I used ERC primarily with bitlbee
+#+srcname: ahyatt-erc
+#+begin_src emacs-lisp 
+  (setq erc-modules '(autoaway autojoin completion fill irccontrols log match menu move-to-prompt noncommands notify readonly ring scrolltobottom smiley stamp track)
+        erc-hide-list (quote ("JOIN" "KICK" "NICK" "PART" "QUIT" "MODE"))
+        erc-autoaway-mode t
+        erc-notify-mode t
+        erc-echo-notices-in-minibuffer-flag t
+        erc-auto-query 'window-noselect
+        erc-autoaway-idletimer 'emacs
+        erc-user-full-name user-full-name
+        erc-track-when-inactive 'nil
+        erc-track-exclude-types '(("JOIN" "NICK" "PART" "QUIT" "MODE"
+                                   "324" "329" "332" "333" "353" "477"))
+        erc-track-exclude-server-buffer t
+        erc-track-showcount t)
+#+end_src
+
+* Prettiness
+#+srcname: ahyatt-pretiness
+#+begin_src emacs-lisp
+  (require 'zenburn)
+  (zenburn)
+
+  ;; fixes to zenburn
+
+  ;; We should make these things just apply when loaded...
+  (require 'jabber-activity)
+  (require 'jabber-chat)
+  (require 'which-func)
+  (require 'gnus)
+  (set-face-attribute 'gnus-group-mail-3 nil :foreground "lightblue" :weight 'bold)
+  (set-face-attribute 'jabber-activity-personal-face nil :foreground "lightblue")
+  (set-face-attribute 'jabber-rare-time-face nil :foreground "dark grey")
+  (set-face-attribute 'which-func nil :foreground "white")
+  
+  (defun ash-new-frame (frame)
+    (select-frame frame)
+    (set-terminal-coding-system 'utf-8)
+    (tool-bar-mode -1)
+  
+    (scroll-bar-mode -1))
+  
+  ;;; This is how we can get utf8 on terminals with emacsclient
+  (add-to-list 'after-make-frame-functions 'ash-new-frame)
+  
+  ;; useful parenthesis highlight
+  (require 'highlight-parentheses)
+  (add-hook 'emacs-lisp-mode-hook 'highlight-parentheses-mode)
 #+end_src
