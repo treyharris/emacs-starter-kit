@@ -334,25 +334,50 @@ I used ERC primarily with bitlbee
         erc-track-exclude-server-buffer t
         erc-track-showcount t)
 #+end_src
+** Modeline fix
+For some reason, erc decides to use arbitrary faces for the modeline,
+when I think there should be just one modeline face.  This fixes that.
+
+#+srcname: ahyatt-erc-modeline
+#+begin_src emacs-lisp 
+  (require 'erc-track)  ;; to load the default definitions
+  
+  (defface erc-modeline
+    '((((class color)) (:foreground "ping"))
+      (t (:italic t) (:bold t)))
+    "Face used for the header of a wave."
+    :group 'erc)
+  
+  
+  (defun erc-track-find-face (faces)
+    "Just return a reasonable face"
+    'erc-modeline)
+#+end_src
+
 
 * Prettiness
 #+srcname: ahyatt-pretiness
 #+begin_src emacs-lisp
   (require 'zenburn)
   (zenburn)
-
+  
   ;; fixes to zenburn
-
+  
   ;; We should make these things just apply when loaded...
   (require 'jabber-activity)
   (require 'jabber-chat)
   (require 'which-func)
   (require 'gnus)
   (set-face-attribute 'gnus-group-mail-3 nil :foreground "lightblue" :weight 'bold)
+  ;; A hack, erc-track-find-face always seems to pick this one, it
+  ;; should pick something else, I think.
+  (set-face-attribute 'erc-nick-default-face nil :foreground "pink")
   (set-face-attribute 'jabber-activity-personal-face nil :foreground "lightblue")
   (set-face-attribute 'jabber-rare-time-face nil :foreground "dark grey")
   (set-face-attribute 'which-func nil :foreground "white")
-  
+  (set-face-attribute 'default nil :family "Inconsolata" :height 180)
+  (set-face-attribute 'mode-line nil :family "DejaVu Sans" :width 'condensed :height 0.9 :weight 'extra-light)  
+
   (defun ash-new-frame (frame)
     (select-frame frame)
     (set-terminal-coding-system 'utf-8)
