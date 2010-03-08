@@ -2,7 +2,6 @@
 #+SEQ_TODO: PROPOSED TODO STARTED | DONE DEFERRED REJECTED
 #+OPTIONS: H:2 num:nil toc:t
 #+STARTUP: oddeven
-
 * Who am I?
 #+srcname: ahyatt-who
 #+begin_src emacs-lisp 
@@ -318,6 +317,7 @@ This is for gnus customization, not anything server-specific.
 #+end_src
 * ERC
 I used ERC primarily with bitlbee
+** Base setup 
 #+srcname: ahyatt-erc
 #+begin_src emacs-lisp 
   (setq erc-modules '(autoaway autojoin completion fill irccontrols log match menu move-to-prompt noncommands notify readonly ring scrolltobottom smiley stamp track)
