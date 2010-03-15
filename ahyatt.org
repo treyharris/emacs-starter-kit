@@ -251,6 +251,7 @@ This is for gnus customization, not anything server-specific.
   (setq bbdb/mail-auto-create-p 'bbdb-ignore-some-messages-hook)
   (setq bbdb/news-auto-create-p 'bbdb-ignore-some-messages-hook)
   
+  (setq gnus-ignored-newsgroups "^$")
   (setq mm-text-html-renderer 'w3m-standalone)
   (setq mm-attachment-override-types '("image/.*"))
   ;; No HTML mail
@@ -295,7 +296,7 @@ This is for gnus customization, not anything server-specific.
   (setq gnus-sum-thread-tree-vertical "│")
   (setq gnus-sum-thread-tree-leaf-with-other "├─► ")
   (setq gnus-sum-thread-tree-single-leaf "╰─► ")
-
+  
   (setq gnus-single-article-buffer nil)
 #+end_src
 
