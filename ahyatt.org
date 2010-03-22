@@ -8,13 +8,24 @@
   (setq wave-client-user "ahyatt")
 #+end_src
 
-* My coding style
+* Coding
+** My coding style
 #+srcname: ahyatt-coding-style
 #+begin_src emacs-lisp
   (setq-default show-trailing-whitespace t)
   (add-hook 'c-mode-hook 'highlight-80+-mode)
   (add-hook 'c++-mode-hook 'highlight-80+-mode)
 #+end_src
+** Indent after yank
+#+srcname: ahyatt-coding-indent
+#+begin_src emacs-lisp 
+  (defadvice yank (after c-indent-after-yank activate)
+    "Do an indent after a yank"
+    (if c-buffer-is-cc-mode
+        (let ((transient-mark-mode nil))
+          (indent-region (region-beginning) (region-end) nil))))
+#+end_src
+
 * My org setup
 This has been precisely fine-tuned for how I like to work with org.
 *** Loading extras
