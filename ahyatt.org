@@ -133,7 +133,6 @@ availability.
                                                (t "green")))))))))
           (backward-char)))))
 #+end_src
-***** TODO Move this into work-specific org file, plus integrate italic
 * Misc customization
 #+srcname: ahyatt-misc
 #+begin_src emacs-lisp
@@ -188,7 +187,7 @@ again.
 #+srcname: ahyatt-jabber
 #+begin_src emacs-lisp
   (add-to-list 'load-path
-               (expand-file-name (concat elisp-source-dir "/emacs-jabber")))
+  (expand-file-name (concat elisp-source-dir "/emacs-jabber")))
   (require 'jabber-autoloads)
   
   ;; I don't like the jabber modeline having counts, it takes up too
@@ -344,6 +343,7 @@ I used ERC primarily with bitlbee
         erc-track-exclude-types '(("JOIN" "NICK" "PART" "QUIT" "MODE"
                                    "324" "329" "332" "333" "353" "477"))
         erc-track-exclude-server-buffer t
+        erc-autoaway-idle-seconds 180
         erc-track-showcount t
         erc-track-shorten-names nil)
 #+end_src
