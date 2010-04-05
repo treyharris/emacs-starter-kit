@@ -336,14 +336,14 @@ I used ERC primarily with bitlbee
         erc-autoaway-mode t
         erc-notify-mode t
         erc-echo-notices-in-minibuffer-flag t
-        erc-auto-query 'window-noselect
+        erc-auto-query nil  ;; nil = no new buffer
         erc-autoaway-idletimer 'emacs
         erc-user-full-name user-full-name
         erc-track-when-inactive 'nil
         erc-track-exclude-types '(("JOIN" "NICK" "PART" "QUIT" "MODE"
                                    "324" "329" "332" "333" "353" "477"))
         erc-track-exclude-server-buffer t
-        erc-autoaway-idle-seconds 180
+        erc-autoaway-idle-seconds 300
         erc-track-showcount t
         erc-track-shorten-names nil)
 #+end_src
