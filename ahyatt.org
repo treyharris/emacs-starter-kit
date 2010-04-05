@@ -176,7 +176,7 @@ availability.
             '(lambda ()
                (define-key dired-mode-map "e" 'wdired-change-to-wdired-mode)))
   
-  (display-time-mode)
+  (add-to-list 'Info-default-directory-list "~/.emacs.d/info/")
   
   (define-key global-map "\C-x\C-j" 'dired-jump)
 #+end_src
