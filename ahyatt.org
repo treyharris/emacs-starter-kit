@@ -250,6 +250,8 @@ This is for gnus customization, not anything server-specific.
   (setq bbdb/mail-auto-create-p 'bbdb-ignore-some-messages-hook)
   (setq bbdb/news-auto-create-p 'bbdb-ignore-some-messages-hook)
   
+  (setq gnus-nov-is-evil t)
+  (setq nnimap-search-uids-not-since-is-evil t)
   (setq gnus-ignored-newsgroups "^$")
   (setq mm-text-html-renderer 'w3m-standalone)
   (setq mm-attachment-override-types '("image/.*"))
