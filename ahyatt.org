@@ -343,12 +343,14 @@ I used ERC primarily with bitlbee
         erc-track-exclude-types '(("JOIN" "NICK" "PART" "QUIT" "MODE"
                                    "324" "329" "332" "333" "353" "477"))
         erc-track-exclude-server-buffer t
-        erc-track-showcount t)
+        erc-track-showcount t
+        erc-track-shorten-names nil)
 #+end_src
 ** Modeline fix
 For some reason, erc decides to use arbitrary faces for the modeline,
-when I think there should be just one modeline face.  This fixes that.
-
+when I think there should be just one modeline face.  This doesn't
+actually fix this as much as it should.
+*** TODO Create a complete modeline face solution
 #+srcname: ahyatt-erc-modeline
 #+begin_src emacs-lisp 
   (require 'erc-track)  ;; to load the default definitions
@@ -364,8 +366,6 @@ when I think there should be just one modeline face.  This fixes that.
     "Just return a reasonable face"
     'erc-modeline)
 #+end_src
-
-
 * Prettiness
 #+srcname: ahyatt-pretiness
 #+begin_src emacs-lisp
