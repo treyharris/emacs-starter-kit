@@ -367,6 +367,15 @@ actually fix this as much as it should.
     "Just return a reasonable face"
     'erc-modeline)
 #+end_src
+* VM
+#+srcname: ahyatt-vm
+#+begin_src emacs-lisp 
+  (add-to-list 'load-path
+               (expand-file-name (concat elisp-source-dir "/vm")))
+  (require 'vm-autoloads)
+  (when (fboundp 'bbdb-insinuate-vm)
+    (bbdb-insinuate-vm))
+#+end_src
 * Prettiness
 Color themes I like:
   - Alice Blue: nice use of fonts
