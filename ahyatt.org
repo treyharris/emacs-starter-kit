@@ -2,6 +2,13 @@
 #+SEQ_TODO: PROPOSED TODO STARTED | DONE DEFERRED REJECTED
 #+OPTIONS: H:2 num:nil toc:t
 #+STARTUP: oddeven
+* Startup sanity
+#+srcname: ahyatt-startup
+#+begin_src emacs-lisp
+  ;; This only gets set for real when cc mode is enabled
+  (setq c-buffer-is-cc-mode nil)
+#+end_src
+
 * Who am I?
 #+srcname: ahyatt-who
 #+begin_src emacs-lisp 
@@ -24,6 +31,36 @@
     (if c-buffer-is-cc-mode
         (let ((transient-mark-mode nil))
           (indent-region (region-beginning) (region-end) nil))))
+#+end_src
+** vi-like clearing
+#+srcname: ahyatt-coding-clearin
+#+begin_src emacs-lisp 
+  (defvar ash-clear-pairs '((?\( . ")")
+                            (?\) . "(")
+                            (?\[ . "]")
+                            (?\] . "[")
+                            (?< . ">")
+                            (?> . "<")))
+  
+  (defun ash-opener (char)
+    "Return the opening equivalent of CHAR, as a string."
+    (if (memq char '(?\( ?\[ ?<))
+        (char-to-string char)
+      (ash-pair-get-other char)))
+  
+  (defun ash-pair-get-other (char)
+    (or (cdr (assoc char ash-clear-pairs)) (char-to-string char)))
+  
+  (defun ash-clear (char)
+    (interactive "*cClear within: ")
+    (let* ((opener (ash-opener char))
+           (closer (ash-pair-get-other (string-to-char opener)))
+           (begin (search-backward-regexp (format "%s\\|%s" (regexp-quote opener)
+                                                 (regexp-quote closer)))))
+      (forward-char)
+      (search-forward (ash-pair-get-other (string-to-char (match-string 0))))
+      (kill-region (+ 1 begin) (- (point) 1))
+      (goto-char (+ 1 begin))))
 #+end_src
 
 * My org setup
@@ -237,6 +274,7 @@ again.
   (key-chord-define-global "xb" 'recentf-ido-find-file)
   (key-chord-define-global "xg" 'smex)
   (key-chord-define-global "XG" 'smex-major-mode-commands)
+  (key-chord-define-global "fj" 'ash-clear)
 #+end_src
 * Gnus
 This is for gnus customization, not anything server-specific.
@@ -368,15 +406,6 @@ actually fix this as much as it should.
   (defun erc-track-find-face (faces)
     "Just return a reasonable face"
     'erc-modeline)
-#+end_src
-* VM
-#+srcname: ahyatt-vm
-#+begin_src emacs-lisp 
-  (add-to-list 'load-path
-               (expand-file-name (concat elisp-source-dir "/vm")))
-  (require 'vm-autoloads)
-  (when (fboundp 'bbdb-insinuate-vm)
-    (bbdb-insinuate-vm))
 #+end_src
 * Prettiness
 Color themes I like:
