@@ -19,9 +19,9 @@
 ** My coding style
 #+srcname: ahyatt-coding-style
 #+begin_src emacs-lisp
-  (setq-default show-trailing-whitespace t)
   (add-hook 'c-mode-hook 'highlight-80+-mode)
   (add-hook 'c++-mode-hook 'highlight-80+-mode)
+  (add-hook 'java-mode-hook 'highlight-80+-mode)
 #+end_src
 ** Indent after yank
 #+srcname: ahyatt-coding-indent
@@ -79,6 +79,59 @@
       (search-forward (ash-pair-get-other (match-string 0)))
       (kill-region (+ 1 begin) (- (point) 1))
       (goto-char (+ 1 begin))))
+#+end_src
+
+** Semantic
+Sometimes I like to experiment with semantic, although it's never
+turned on all the time.
+#+srcname: ahyatt-semantic
+#+begin_src emacs-lisp 
+  (setq semanticdb-default-save-directory "/tmp/semantic.cache")
+#+end_src
+** Completion
+#+srcname: ahyatt-completion
+#+begin_src emacs-lisp 
+(add-to-list 'load-path (concat package-user-dir "/company-0.5"))
+(autoload 'company-mode "company" nil t)
+#+end_src
+
+** Ediff
+#+srcname: ahyatt-ediff
+#+begin_src emacs-lisp 
+  (setq ediff-keep-variants nil)
+  
+  ;; The following was from a mail...
+  
+  (add-hook 'ediff-keymap-setup-hook (lambda () (define-key 'ediff-mode-map "t" 'ediff-cycle-combination-pattern)))
+  
+  (setq ediff-combination-patterns-available '())
+  (add-to-list 'ediff-combination-patterns-available
+   ;; a, then b, then ancestor with markers
+   '("<<<<<<< variant A" A ">>>>>>> variant B" B  "####### Ancestor" Ancestor "======= end") t)
+  
+  (add-to-list 'ediff-combination-patterns-available
+   ;; b, then a, then ancestor with markers
+   '("<<<<<<< variant B" B ">>>>>>> variant A" A  "####### Ancestor" Ancestor "======= end") t)
+  
+  (add-to-list 'ediff-combination-patterns-available
+   ;; a, b, ancestor w/o markers
+   '("" A "" B "" Ancestor "") t)
+  
+  (add-to-list 'ediff-combination-patterns-available
+   ;; b, a, ancestor w/o markers
+   '("" B "" A "" Ancestor "") t)
+  
+  ;; add more possibliities to ediff-combination-patterns-available
+  
+  ;;; some elisp here to cycle thru patterns (probably ugly).
+  (defun ediff-cycle-combination-pattern ()
+    "Change ediff-combination-pattern"
+    (interactive)
+    (setq ediff-combination-pattern
+          (pop ediff-combination-patterns-available))
+    (add-to-list 'ediff-combination-patterns-available ediff-combination-pattern t)
+    (ediff-combine-diffs nil))
+  
 #+end_src
 
 * My org setup
@@ -147,52 +200,67 @@ entries in the modeline.
 *** Remember integration
 #+srcname: ahyatt-org-remember
 #+begin_src emacs-lisp
-  (setq remember-annotation-functions '(org-remember-annotation)
-        remember-handler-functions '(org-remember-handler)
-        org-remember-templates
-        '(("Note" ?n "* %a%?\n%u\n%i" "~/org/work.org" "Unfiled notes")
-          ("Journal" ?j "* %T %?" "~/org/notes.org" date-tree)
-          ("Child todo" ?c "* TODO %?\n%a" "~/org/work.org" "Inbox")
-          ("Todo" ?t "* TODO %?\n%a" "~/org/work.org" "Inbox")
-          ("Act on email" ?a "* TODO Process [%a]\n%!" "~/org/work.org" "Inbox"
-           (mime-view-mode wl-summary-mode gnus-summary-mode gnus-article-mode))))
-  (add-hook 'remember-mode-hook 'org-remember-apply-template)
-  (define-key global-map [f12] 'org-remember)
+  (setq org-capture-templates
+        '(("n" "Note" entry
+           (file+headline "~/org/work.org" "Unfiled notes")
+           "* %a%?\n%u\n%i")
+          ("j" "Journal" entry
+           (file+datetree "~/org/notes.org")
+           "* %T %?")
+          ("t" "Todo" entry
+           (file+headline "~/org/work.org" "Inbox")
+           "* TODO %?\n%a")
+          ("a" "Act on email" entry
+           (file+headline "~/org/work.org" "Inbox")
+           "* TODO Process [%a]\n" :immediate-finish t)))
+  (setq org-default-notes-file (concat org-directory "/work.org"))
+  (define-key global-map [f12] 'org-capture)
 #+end_src
 *** Jabber integration
 Some code to colorize tags that are jabber names based on
 availability.
 #+srcname: ahyatt-org-jabber
 #+begin_src emacs-lisp 
+  (add-hook 'jabber-post-connect-hook 'jabber-autoaway-start)
+  
   (defun ash-jabber-colorize-tags ()
-    (let ((contact-hash (make-hash-table :test 'equal)))
-      (dolist (jc jabber-connections)
-        (dolist (contact (plist-get (fsm-get-state-data jc) :roster))
-          (puthash (car (split-string (symbol-name contact) "@")) contact contact-hash)))
-      (save-excursion
-        (goto-char (point-min))
-        (while (re-search-forward ":\\(\\w+\\):" nil t)
-          (let ((tag (match-string-no-properties 1)))
-            (when (and tag (gethash tag contact-hash))
-              (let* ((js (jabber-jid-symbol (gethash tag contact-hash)))
-                     (connected (get js 'connected))
-                     (show (get js 'show)))
-                (if connected
-                    (let ((o (make-overlay (match-beginning 1) (- (point) 1))))
-                      (overlay-put o 'face
-                                   (cons 'foreground-color
-                                         (cond ((equal "away" show)
-                                                "orange")
-                                               ((equal "dnd" show)
-                                                "red")
-                                               (t "green")))))))))
-          (backward-char)))))
+    (when (featurep 'emacs-jabber)
+      (let ((contact-hash (make-hash-table :test 'equal)))
+        (dolist (jc jabber-connections)
+          (dolist (contact (plist-get (fsm-get-state-data jc) :roster))
+            (puthash (car (split-string (symbol-name contact) "@")) contact contact-hash)))
+        (save-excursion
+          (goto-char (point-min))
+          (while (re-search-forward ":\\(\\w+\\):" nil t)
+            (let ((tag (match-string-no-properties 1)))
+              (when (and tag (gethash tag contact-hash))
+                (let* ((js (jabber-jid-symbol (gethash tag contact-hash)))
+                       (connected (get js 'connected))
+                       (show (get js 'show)))
+                  (if connected
+                      (let ((o (make-overlay (match-beginning 1) (- (point) 1))))
+                        (overlay-put o 'face
+                                     (cons 'foreground-color
+                                           (cond ((equal "away" show)
+                                                  "orange")
+                                                 ((equal "dnd" show)
+                                                  "red")
+                                                 (t "green")))))))))
+            (backward-char))))))
+#+end_src
+*** Timer
+#+srcname: ahyatt-org-timer
+#+begin_src emacs-lisp
+  (setq org-timer-default-timer 30)
 #+end_src
 * Misc customization
 #+srcname: ahyatt-misc
 #+begin_src emacs-lisp
+  (setq x-select-enable-clipboard t)
   (savehist-mode 1)
   (recentf-mode 1)
+  (tool-bar-mode -1)
+  (display-time-mode 1)
   ;; Recentf is useless without saving frequently
   (run-with-idle-timer 1 nil 'recentf-save-list)
   
@@ -234,6 +302,7 @@ availability.
   (add-to-list 'Info-default-directory-list "~/.emacs.d/info/")
   
   (define-key global-map "\C-x\C-j" 'dired-jump)
+  (setq nxml-slash-auto-complete-flag t)
 #+end_src
 * Jabber customizations
 I've stopped using Jabber, since it seems to slow down emacs,
@@ -253,19 +322,24 @@ again.
     (setq ad-return-value ""))
   (ad-activate 'jabber-mode-line-count-contacts)
   (add-hook 'jabber-chat-mode-hook 'flyspell-mode)
-  (jabber-autoaway-start)
   
   (setq jabber-alert-message-hooks '(jabber-message-echo jabber-message-scroll)
         jabber-alert-muc-hooks '(jabber-muc-scroll)
         jabber-alert-presence-hooks (quote (jabber-presence-update-roster))
         jabber-autoaway-method (quote jabber-current-idle-time)
         jabber-mode-line-mode t
-        jabber-cvard-avatars-retrieve t)
+        jabber-vcard-avatars-retrieve nil)
+  (add-hook 'jabber-post-connect-hook 'jabber-autoaway-start)
 #+end_src
 * Various packages
 #+srcname: ahyatt-smex
 #+begin_src emacs-lisp
   (require 'smex)
+  ;; This stopped being defined, so let's just define it ourselves
+  (defun smex-update-and-run ()
+    (interactive)
+    (smex-update)
+    (smex))
   (add-hook 'after-init-hook 'smex-initialize)
   (global-set-key (kbd "M-x") 'smex)
   (global-set-key (kbd "M-X") 'smex-major-mode-commands)
@@ -278,6 +352,7 @@ again.
       (progn
         (require 'edit-server)
         (edit-server-start)))
+  
 #+end_src
 * Keychord
 #+srcname: ahyatt-keychord
@@ -292,12 +367,16 @@ again.
   (key-chord-define-global "xb" 'recentf-ido-find-file)
   (key-chord-define-global "xg" 'smex)
   (key-chord-define-global "XG" 'smex-major-mode-commands)
+  (key-chord-define-global "p\\" 'jabber-switch-to-roster-buffer)
   (key-chord-define-global "fj" 'ash-clear)
 #+end_src
 * Gnus
 This is for gnus customization, not anything server-specific.
 #+srcname: ahyatt-gnus
 #+begin_src emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/src/gnus/lisp")
+  ;; gnus-agent and nnimap don't always work well together
+  (setq gnus-agent nil)
   (setq bbdb-always-add-addresses 'ash-add-addresses-p)
   (setq bbdb-complete-name-allow-cycling t)
   (setq bbdb-completion-display-record nil)
@@ -306,6 +385,7 @@ This is for gnus customization, not anything server-specific.
   (setq bbdb/mail-auto-create-p 'bbdb-ignore-some-messages-hook)
   (setq bbdb/news-auto-create-p 'bbdb-ignore-some-messages-hook)
   
+  ;; This really speeds things up!
   (setq gnus-nov-is-evil t)
   (setq nnimap-search-uids-not-since-is-evil t)
   (setq gnus-ignored-newsgroups "^$")
@@ -356,7 +436,6 @@ This is for gnus customization, not anything server-specific.
   
   (setq gnus-single-article-buffer nil)
 #+end_src
-
 * Terminal
 #+srcname: ahyatt-terminal
 #+begin_src emacs-lisp 
@@ -385,7 +464,8 @@ This is for gnus customization, not anything server-specific.
   (setq ido-enable-tramp-completion nil)
 #+end_src
 * ERC
-I used ERC primarily with bitlbee
+I used ERC primarily with bitlbee.  But it kind of sucks, having some
+huge problems I haven't found a workaround for.
 ** Base setup 
 #+srcname: ahyatt-erc
 #+begin_src emacs-lisp 
@@ -409,7 +489,6 @@ I used ERC primarily with bitlbee
 For some reason, erc decides to use arbitrary faces for the modeline,
 when I think there should be just one modeline face.  This doesn't
 actually fix this as much as it should.
-*** TODO Create a complete modeline face solution
 #+srcname: ahyatt-erc-modeline
 #+begin_src emacs-lisp 
   (require 'erc-track)  ;; to load the default definitions
@@ -425,6 +504,95 @@ actually fix this as much as it should.
     "Just return a reasonable face"
     'erc-modeline)
 #+end_src
+* RCIRC
+Because ERC kind of sucks
+#+srcname: ahyatt-rcirc
+#+begin_src emacs-lisp 
+  (eval-after-load "rcirc"
+    '(progn (add-hook 'rcirc-mode-hook (lambda () 'rcirc-omit-mode))
+            (add-hook 'rcirc-mode-hook (lambda () (flyspell-mode 1)))
+            (add-hook 'rcirc-mode-hook (lambda () (rcirc-track-minor-mode 1)))
+            (defun rcirc-handler-MODE (process sender args text))))
+  
+#+end_src
+** Auto-away mode
+#+srcname: ahyatt-rcirc-autoaway
+#+begin_src emacs-lisp 
+  ;; From http://www.emacswiki.org/emacs/rcircAutoAway
+  (defvar rcirc-auto-away-server-regexps nil
+    "List of regexps to match servers for auto-away.")
+  
+  (defvar rcirc-auto-away-after 3600
+    "Auto-away after this many seconds.")
+  
+  (defvar rcirc-auto-away-reason "idle"
+    "Reason sent to server when auto-away.")
+  
+  (defun rcirc-auto-away ()
+    (message "rcirc-auto-away")
+    (rcirc-auto-away-1 rcirc-auto-away-reason)
+    (add-hook 'post-command-hook 'rcirc-auto-unaway))
+  
+  (defun rcirc-auto-away-1 (reason)
+    (let ((regexp (mapconcat (lambda (x) (concat "\\(" x "\\)")) 
+                             rcirc-auto-away-server-regexps "\\|")))
+      (dolist (process (rcirc-process-list))
+        (when (string-match regexp (process-name process))
+          (rcirc-send-string process (concat "AWAY :" reason))))))
+  
+  (defun rcirc-auto-unaway ()
+    (remove-hook 'post-command-hook 'rcirc-auto-unaway)
+    (rcirc-auto-away-1 ""))
+  
+  (run-with-idle-timer rcirc-auto-away-after t 'rcirc-auto-away)
+  ;;(cancel-function-timers 'rcirc-auto-away)
+#+end_src
+* Bookmarks
+I like bookmarks to be saved regularly
+#+srcname: ahyatt-bookmarks
+#+begin_src emacs-lisp 
+  ; Save every time things are changed
+  (setq bookmark-save-flag 1)
+#+end_src
+* Anything
+My anything-config, which is fast and general
+#+srcname: ahyatt-anything
+#+begin_src emacs-lisp 
+  (require 'anything)
+  (require 'anything-config)
+  
+  (setq anything-sources
+        (remove-duplicates (append anything-for-files-prefered-list
+                                   '(anything-c-source-info-emacs
+                                     anything-c-source-org-keywords
+                                     anything-c-source-info-org
+                                     anything-c-source-info-cl
+                                     anything-c-source-info-elisp
+                                     anything-c-source-jabber-contacts))))
+  
+  (key-chord-define-global "=1" 'anything)
+#+end_src
+
+* Breadcrumb
+#+srcname: ash-breadcrumb
+#+begin_src emacs-lisp 
+  (autoload 'bc-set               "breadcrumb" "Set bookmark in current point."   t)
+  (autoload 'bc-previous          "breadcrumb" "Go to previous bookmark."         t)
+  (autoload 'bc-next              "breadcrumb" "Go to next bookmark."             t)
+  (autoload 'bc-local-previous    "breadcrumb" "Go to previous local bookmark."   t)
+  (autoload 'bc-local-next        "breadcrumb" "Go to next local bookmark."       t)
+  (autoload 'bc-goto-current      "breadcrumb" "Go to the current bookmark."      t)
+  (autoload 'bc-list              "breadcrumb" "List all bookmarks in menu mode." t)
+  (autoload 'bc-clear             "breadcrumb" "Clear all bookmarks."             t)
+  
+  (key-chord-define-global "bv" 'bc-set)
+  (key-chord-define-global "bp" 'bc-previous)
+  (key-chord-define-global "bn" 'bc-next)
+  (key-chord-define-global "bq" 'bc-local-previous)
+  (key-chord-define-global "bk" 'bc-local-next)
+  (key-chord-define-global "b5" 'bc-list)
+  (key-chord-define-global "bc" 'bc-clear)
+#+end_src
 * Prettiness
 Color themes I like:
   - Alice Blue: nice use of fonts
@@ -437,11 +605,11 @@ Color themes I like:
                (expand-file-name (concat elisp-source-dir "/color-theme")))
   (add-to-list 'load-path
                (expand-file-name (concat elisp-source-dir "/color-theme/themes")))
-  
+    
   ;; (require 'zenburn)
   ;; (zenburn)
   ;; ;; fixes to zenburn
-  
+    
   ;; ;; We should make these things just apply when loaded...
   ;; (require 'jabber-activity)
   ;; (require 'jabber-chat)
@@ -454,37 +622,27 @@ Color themes I like:
   ;; (set-face-attribute 'jabber-activity-personal-face nil :foreground "lightblue")
   ;; (set-face-attribute 'jabber-rare-time-face nil :foreground "dark grey")
   ;; (set-face-attribute 'which-func nil :foreground "white")
-  
+    
+  (set-face-background 'default "gray95")
   (set-face-background 'minibuffer-prompt "yellow")
   (set-face-foreground 'minibuffer-prompt "black")
   (set-face-foreground 'font-lock-negation-char-face "red")
+  (set-face-attribute 'font-lock-function-name-face nil :underline t)
+  (set-face-attribute 'font-lock-variable-name-face nil :family "Monaco" :height 130 :weight 'bold)
+  (set-face-attribute 'mode-line nil :family "Tlwg Typist" :height 100)
+  (set-face-attribute 'font-lock-comment-face nil :weight 'bold)
+  (set-face-attribute 'font-lock-function-name-face nil :weight 'bold)
   
-  (set-face-attribute 'default nil :family "Monaco" :height 170)
-  (set-face-attribute 'mode-line nil :family "Lucida Sans" :width 'condensed :height 0.7 :weight 'extra-light)
-  (set-face-attribute 'mode-line-inactive nil :family "Lucida Sans" :width 'condensed :height 0.4 :weight 'extra-light)
+  (set-face-attribute 'default nil :family "Inconsolata" :height 140)
   
-  (set-face-attribute 'org-todo nil
-                      :family "Times New Roman"
-                      :height 0.9
-                      :box '(:line-width 2 :color "grey50" :style "raised")
-                      :foreground "black"
-                      :background "white")
-  ;; Bold, nonitalic comments, they are important!
-  (make-face-unitalic 'font-lock-comment-face)
-  (make-face-bold 'font-lock-comment-face)
-  (make-face-italic 'font-lock-function-name-face)
-  
-  (defun ash-new-frame (frame)
-    (select-frame frame)
-    (set-terminal-coding-system 'utf-8)
-    (tool-bar-mode -1)
-  
-    (scroll-bar-mode -1))
-  
-  ;;; This is how we can get utf8 on terminals with emacsclient
-  (add-to-list 'after-make-frame-functions 'ash-new-frame)
-  
-  ;; useful parenthesis highlight
-  (require 'highlight-parentheses)
-  (add-hook 'emacs-lisp-mode-hook 'highlight-parentheses-mode)
+  (eval-after-load "jabber"
+    '(add-hook 'jabber-chat-mode-hook (lambda () (variable-pitch-mode t))))
+  (eval-after-load "wl"
+   '(progn
+      (set-face-attribute 'wl-highlight-message-cited-text-1 nil :height 120)
+      (set-face-attribute 'wl-highlight-message-cited-text-2 nil :height 120)
+      (set-face-attribute 'wl-highlight-message-cited-text-3 nil :height 120)
+      (set-face-attribute 'wl-highlight-message-cited-text-4 nil :height 120)
+      (set-face-attribute 'wl-highlight-message-cited-text-5 nil :height 120)
+      (add-hook 'wl-message-buffer-created-hook (lambda () (variable-pitch-mode t)))))
 #+end_src
