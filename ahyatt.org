@@ -7,8 +7,11 @@
 #+begin_src emacs-lisp
   ;; This only gets set for real when cc mode is enabled
   (setq c-buffer-is-cc-mode nil)
+  
+  ;; We don't really want to specify every single directory...
+  (let ((default-directory elisp-source-dir))
+    (normal-top-level-add-subdirs-to-load-path))
 #+end_src
-
 * Who am I?
 #+srcname: ahyatt-who
 #+begin_src emacs-lisp 
@@ -91,7 +94,6 @@ turned on all the time.
 ** Completion
 #+srcname: ahyatt-completion
 #+begin_src emacs-lisp 
-(add-to-list 'load-path (concat package-user-dir "/company-0.5"))
 (autoload 'company-mode "company" nil t)
 #+end_src
 
@@ -136,12 +138,6 @@ turned on all the time.
 
 * My org setup
 This has been precisely fine-tuned for how I like to work with org.
-*** Loading extras
-I wrote org-screen, and I do use it occasionally.
-#+srcname: ahyatt-org-requires
-#+begin_src emacs-lisp 
-  (require 'org-screen)
-#+end_src
 *** Clock setting
 I like to time tasks, display the time in the modeline, and have diary
 entries in the modeline.
@@ -310,26 +306,23 @@ sometimes dramatically.  Still, it's nice to have in case I need it
 again.
 #+srcname: ahyatt-jabber
 #+begin_src emacs-lisp
-  (add-to-list 'load-path
-  (expand-file-name (concat elisp-source-dir "/emacs-jabber")))
-  (require 'jabber-autoloads)
-  
-  ;; I don't like the jabber modeline having counts, it takes up too
-  ;; much room.
-  (defadvice jabber-mode-line-count-contacts (around ash-remove-jabber-counts
-                                                     (&rest ignore))
-    "Override for count contacts, to remove contacts from modeline"
-    (setq ad-return-value ""))
-  (ad-activate 'jabber-mode-line-count-contacts)
-  (add-hook 'jabber-chat-mode-hook 'flyspell-mode)
-  
-  (setq jabber-alert-message-hooks '(jabber-message-echo jabber-message-scroll)
-        jabber-alert-muc-hooks '(jabber-muc-scroll)
-        jabber-alert-presence-hooks (quote (jabber-presence-update-roster))
-        jabber-autoaway-method (quote jabber-current-idle-time)
-        jabber-mode-line-mode t
-        jabber-vcard-avatars-retrieve nil)
-  (add-hook 'jabber-post-connect-hook 'jabber-autoaway-start)
+  (eval-after-load "jabber"
+    (progn
+      ;; I don't like the jabber modeline having counts, it takes up too
+      ;; much room.
+      (defadvice jabber-mode-line-count-contacts (around ash-remove-jabber-counts
+                                                         (&rest ignore))
+        "Override for count contacts, to remove contacts from modeline"
+        (setq ad-return-value ""))
+      (ad-activate 'jabber-mode-line-count-contacts)
+      (add-hook 'jabber-chat-mode-hook 'flyspell-mode)
+      (setq jabber-alert-message-hooks '(jabber-message-echo jabber-message-scroll)
+            jabber-alert-muc-hooks '(jabber-muc-scroll)
+            jabber-alert-presence-hooks (quote (jabber-presence-update-roster))
+            jabber-autoaway-method (quote jabber-current-idle-time)
+            jabber-mode-line-mode t
+            jabber-vcard-avatars-retrieve nil)
+      (add-hook 'jabber-post-connect-hook 'jabber-autoaway-start)))
 #+end_src
 * Various packages
 #+srcname: ahyatt-smex
@@ -374,7 +367,6 @@ again.
 This is for gnus customization, not anything server-specific.
 #+srcname: ahyatt-gnus
 #+begin_src emacs-lisp
-  (add-to-list 'load-path "~/.emacs.d/src/gnus/lisp")
   ;; gnus-agent and nnimap don't always work well together
   (setq gnus-agent nil)
   (setq bbdb-always-add-addresses 'ash-add-addresses-p)
@@ -601,28 +593,6 @@ Color themes I like:
   - Linh Dang Dark: dark, nice fonts
 #+srcname: ahyatt-pretiness
 #+begin_src emacs-lisp
-  (add-to-list 'load-path
-               (expand-file-name (concat elisp-source-dir "/color-theme")))
-  (add-to-list 'load-path
-               (expand-file-name (concat elisp-source-dir "/color-theme/themes")))
-    
-  ;; (require 'zenburn)
-  ;; (zenburn)
-  ;; ;; fixes to zenburn
-    
-  ;; ;; We should make these things just apply when loaded...
-  ;; (require 'jabber-activity)
-  ;; (require 'jabber-chat)
-  ;; (require 'which-func)
-  ;; (require 'gnus)
-  ;; (set-face-attribute 'gnus-group-mail-3 nil :foreground "lightblue" :weight 'bold)
-  ;; ;; A hack, erc-track-find-face always seems to pick this one, it
-  ;; ;; should pick something else, I think.
-  ;; (set-face-attribute 'erc-nick-default-face nil :foreground "pink")
-  ;; (set-face-attribute 'jabber-activity-personal-face nil :foreground "lightblue")
-  ;; (set-face-attribute 'jabber-rare-time-face nil :foreground "dark grey")
-  ;; (set-face-attribute 'which-func nil :foreground "white")
-    
   (set-face-background 'default "gray95")
   (set-face-background 'minibuffer-prompt "yellow")
   (set-face-foreground 'minibuffer-prompt "black")

@@ -18,9 +18,8 @@
                                             ".." org-dir)))))
   (setq load-path (append (list org-dir org-contrib-dir)
                           (or load-path nil)))
-  ;; load up Org-mode and Org-babel
-  (require 'org-install)
-  (require 'org-babel-init))
+  ;; load up Org-mode
+  (require 'org-install))
 
 ;; load up the main file
 (org-babel-load-file (expand-file-name "starter-kit.org" dotfiles-dir))
