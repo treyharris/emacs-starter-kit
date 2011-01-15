@@ -16,3 +16,10 @@
 [submodule "src/jabber"]
 	path = src/jabber
 	url = git://emacs-jabber.git.sourceforge.net/gitroot/emacs-jabber/emacs-jabber
+[submodule "src/html5-el"]
+	path = src/html5-el
+	url = https://github.com/hober/html5-el.git
+[submodule "src/gnus"]
+	path = src/gnus
+	url = http://git.gnus.org/gnus.git
+
