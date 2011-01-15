@@ -136,6 +136,32 @@ turned on all the time.
   
 #+end_src
 
+** html5
+#+srcname: emacs-html5
+#+begin_src emacs-lisp
+  (add-to-list 'load-path "~/.emacs.d/src/html5-el")
+  (eval-after-load "rng-loc"
+    '(add-to-list 'rng-schema-locating-files "~/.emacs.d/src/html5-el/schemas.xml"))
+  
+  (require 'whattf-dt)
+#+end_src
+
+** Ropemacs
+#+srcname: ahyatt-ropemacs
+#+begin_src emacs-lisp 
+  (add-to-list 'load-path "/usr/share/emacs/site-lisp/pymacs")
+  (autoload 'pymacs-apply "pymacs")
+  (autoload 'pymacs-call "pymacs")
+  (autoload 'pymacs-eval "pymacs" nil t)
+  (autoload 'pymacs-exec "pymacs" nil t)
+  (autoload 'pymacs-load "pymacs" nil t)
+  (setq ropemacs-global-prefix "C-x /")
+  (eval-after-load "pymacs"
+    '(add-to-list 'pymacs-load-path "/usr/share/pyshared/Pymacs"))
+  (pymacs-load "ropemacs" "rope-")
+  (setq ropemacs-enable-autoimport t)
+#+end_src
+
 * My org setup
 This has been precisely fine-tuned for how I like to work with org.
 *** Clock setting
@@ -143,7 +169,7 @@ I like to time tasks, display the time in the modeline, and have diary
 entries in the modeline.
 #+srcname: ahyatt-org-clock
 #+begin_src emacs-lisp 
-  (setq org-clock-string-limit 50
+  (setq org-clock-string-limit 80
         org-log-done t
         org-agenda-include-diary t
         org-deadline-warning-days 1
@@ -155,7 +181,10 @@ entries in the modeline.
 #+begin_src emacs-lisp 
   (setq org-todo-keywords '((sequence "TODO(t)" "STARTED(s)"
                                       "WAITING(w@/!)" "|" "DONE(d)"
-                                      "OBSOLETE(o)"))
+                                      "OBSOLETE(o)")
+                            (type "PERMANENT(p)")
+                            (sequence "REVIEW(r)" "SEND(e)" "WAITING FOR REVIEW(i)" "RESPOND(p)" "SUBMIT(u)"
+                                      "|" "SUBMITTED(b)"))
         org-agenda-custom-commands
         '(("w" todo "WAITING" nil)
           ("n" tags-todo "+someday"
@@ -163,14 +192,24 @@ entries in the modeline.
             (org-agenda-tags-todo-honor-ignore-options t)))
           ("0" "Critical tasks" ((agenda "") (tags-todo "+p0")))
           ("l" "Agenda and live tasks" ((agenda "")
+                                        (todo "PERMANENT")
                                         (tags-todo "-someday"))))
         org-enforce-todo-dependencies t
         org-agenda-todo-ignore-scheduled t
         org-agenda-dim-blocked-tasks 'invisible
         org-agenda-tags-todo-honor-ignore-options t
         org-agenda-skip-deadline-if-done 't
-        org-agenda-skip-scheduled-if-done 't)
+        org-agenda-skip-scheduled-if-done 't
+        org-agenda-prefix-format '((agenda . " %i %-18:c%?-12t% s")
+                                   (timeline . "  % s")
+                                   (todo . " %i %-18:c")
+                                   (tags . " %i %-18:c")
+                                   (search . " %i %-18:c"))
+        org-agenda-clockreport-parameter-plist
+        '(:maxlevel 2 :link nil :scope ("~/org/work.org")))
+  
 #+end_src
+
 *** Navigation
 #+srcname: ahyatt-org-navigation
 #+begin_src emacs-lisp 
@@ -249,6 +288,18 @@ availability.
 #+begin_src emacs-lisp
   (setq org-timer-default-timer 30)
 #+end_src
+*** Org functions (to submit as patch)
+#+srcname: ahyatt-org-functions
+#+begin_src emacs-lisp 
+  (defun org-narrow-to-clocked-project ()
+    (interactive)
+    (save-excursion
+      (org-clock-jump-to-current-clock)
+      (org-up-heading-all 1)
+      (org-narrow-to-subtree)))
+  
+#+end_src
+
 * Misc customization
 #+srcname: ahyatt-misc
 #+begin_src emacs-lisp
@@ -367,6 +418,9 @@ again.
 This is for gnus customization, not anything server-specific.
 #+srcname: ahyatt-gnus
 #+begin_src emacs-lisp
+  ;; Gnus location
+  (require 'gnus-load)
+  
   ;; gnus-agent and nnimap don't always work well together
   (setq gnus-agent nil)
   (setq bbdb-always-add-addresses 'ash-add-addresses-p)
@@ -555,14 +609,19 @@ My anything-config, which is fast and general
   
   (setq anything-sources
         (remove-duplicates (append anything-for-files-prefered-list
-                                   '(anything-c-source-info-emacs
+                                   '(anything-c-source-buffers+
+                                     anything-c-source-imenu
+                                     anything-c-source-info-emacs
                                      anything-c-source-org-keywords
                                      anything-c-source-info-org
                                      anything-c-source-info-cl
                                      anything-c-source-info-elisp
                                      anything-c-source-jabber-contacts))))
   
+  ;; This makes sense on kinesys keyboards
   (key-chord-define-global "=1" 'anything)
+  ;; This makes sense on normal keyboards
+  (key-chord-define-global "`1" 'anything)
 #+end_src
 
 * Breadcrumb
