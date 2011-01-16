@@ -26,6 +26,3 @@
 [submodule "src/pymacs"]
 	path = src/pymacs
 	url = https://github.com/pinard/Pymacs.git
-[submodule "src/auto-complete"]
-	path = src/auto-complete
-	url = https://github.com/emacsmirror/auto-complete.git

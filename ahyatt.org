@@ -368,6 +368,8 @@ again.
         (setq ad-return-value ""))
       (ad-activate 'jabber-mode-line-count-contacts)
       (add-hook 'jabber-chat-mode-hook 'flyspell-mode)
+      (when (featurep 'anything)
+        (add-to-list 'anything-sources anything-c-source-jabber-contacts))
       (setq jabber-alert-message-hooks '(jabber-message-echo jabber-message-scroll)
             jabber-alert-muc-hooks '(jabber-muc-scroll)
             jabber-alert-presence-hooks (quote (jabber-presence-update-roster))
@@ -608,8 +610,7 @@ My anything-config, which is fast and general
                                      anything-c-source-org-keywords
                                      anything-c-source-info-org
                                      anything-c-source-info-cl
-                                     anything-c-source-info-elisp
-                                     anything-c-source-jabber-contacts))))
+                                     anything-c-source-info-elisp))))
   
   ;; This makes sense on kinesys keyboards
   (key-chord-define-global "=1" 'anything)
@@ -637,6 +638,15 @@ My anything-config, which is fast and general
   (key-chord-define-global "b5" 'bc-list)
   (key-chord-define-global "bc" 'bc-clear)
 #+end_src
+* Autocomplete
+#+srcname: ahyatt-autocomplete
+#+begin_src emacs-lisp 
+  (add-to-list 'load-path "~/.emacs.d/auto-complete")
+  (require 'auto-complete-config)
+  (add-to-list 'ac-dictionary-directories "~/.emacs.d/auto-complete/ac-dict")
+  (ac-config-default)
+#+end_src
+
 * Prettiness
 Color themes I like:
   - Alice Blue: nice use of fonts
