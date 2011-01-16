@@ -149,7 +149,6 @@ turned on all the time.
 ** Ropemacs
 #+srcname: ahyatt-ropemacs
 #+begin_src emacs-lisp 
-  (add-to-list 'load-path "/usr/share/emacs/site-lisp/pymacs")
   (autoload 'pymacs-apply "pymacs")
   (autoload 'pymacs-call "pymacs")
   (autoload 'pymacs-eval "pymacs" nil t)
@@ -158,8 +157,10 @@ turned on all the time.
   (setq ropemacs-global-prefix "C-x /")
   (eval-after-load "pymacs"
     '(add-to-list 'pymacs-load-path "/usr/share/pyshared/Pymacs"))
-  (pymacs-load "ropemacs" "rope-")
-  (setq ropemacs-enable-autoimport t)
+  (eval-after-load "python"
+    (progn
+      (pymacs-load "ropemacs" "rope-")
+      (setq ropemacs-enable-autoimport t)))
 #+end_src
 
 * My org setup
@@ -418,69 +419,61 @@ again.
 This is for gnus customization, not anything server-specific.
 #+srcname: ahyatt-gnus
 #+begin_src emacs-lisp
-  ;; Gnus location
-  (require 'gnus-load)
+  (autoload 'gnus "gnus-load" nil t)
   
-  ;; gnus-agent and nnimap don't always work well together
-  (setq gnus-agent nil)
-  (setq bbdb-always-add-addresses 'ash-add-addresses-p)
-  (setq bbdb-complete-name-allow-cycling t)
-  (setq bbdb-completion-display-record nil)
-  (setq bbdb-silent-running t)
-  (setq bbdb-use-pop-up nil)
-  (setq bbdb/mail-auto-create-p 'bbdb-ignore-some-messages-hook)
-  (setq bbdb/news-auto-create-p 'bbdb-ignore-some-messages-hook)
+  (eval-after-load "gnus"
+    ;; gnus-agent and nnimap don't always work well together
+    (setq gnus-agent nil
+          bbdb-always-add-addresses 'ash-add-addresses-p
+          bbdb-complete-name-allow-cycling t
+          bbdb-completion-display-record nil
+          bbdb-silent-running t
+          bbdb-use-pop-up nil
+          bbdb/mail-auto-create-p 'bbdb-ignore-some-messages-hook
+          bbdb/news-auto-create-p 'bbdb-ignore-some-messages-hook
+           ;; This really speeds things up!
+          gnus-nov-is-evil t
+          nnimap-search-uids-not-since-is-evil t
+          gnus-ignored-newsgroups "^$"
+          mm-text-html-renderer 'w3m-standalone
+          mm-attachment-override-types '("image/.*")
+          ;; No HTML mail
+          mm-discouraged-alternatives '("text/html" "text/richtext")
+          gnus-message-archive-group "Sent"
+          gnus-ignored-mime-types '("text/x-vcard")
+          gnus-agent-queue-mail nil
+          gnus-keep-same-level 't
+          gnus-summary-ignore-duplicates t
+          gnus-group-use-permanent-levels 't
+          ;; From http://emacs.wordpress.com/2008/04/21/two-gnus-tricks/
+          gnus-user-date-format-alist
+          '(((gnus-seconds-today) . "Today, %H:%M")
+            ((+ 86400 (gnus-seconds-today)) . "Yesterday, %H:%M")
+            (604800 . "%A %H:%M") ;;that's one week
+            ((gnus-seconds-month) . "%A %d")
+            ((gnus-seconds-year) . "%B %d")
+            (t . "%B %d '%y"))
+           ;; From http://www.emacswiki.org/emacs/init-gnus.el
+          gnus-summary-line-format "%U%R%z%O %{%16&user-date;%}   %{%-20,20n%} %{%ua%} %B %(%I%-60,60s%)\n"
+          gnus-summary-same-subject ""
+          gnus-sum-thread-tree-indent "    "
+          gnus-sum-thread-tree-single-indent "◎ "
+          gnus-sum-thread-tree-root "● "
+          gnus-sum-thread-tree-false-root "☆"
+          gnus-sum-thread-tree-vertical "│"
+          gnus-sum-thread-tree-leaf-with-other "├─► "
+          gnus-sum-thread-tree-single-leaf "╰─► "
+          gnus-single-article-buffer nil))
   
-  ;; This really speeds things up!
-  (setq gnus-nov-is-evil t)
-  (setq nnimap-search-uids-not-since-is-evil t)
-  (setq gnus-ignored-newsgroups "^$")
-  (setq mm-text-html-renderer 'w3m-standalone)
-  (setq mm-attachment-override-types '("image/.*"))
-  ;; No HTML mail
-  (setq mm-discouraged-alternatives '("text/html" "text/richtext"))
-  (setq gnus-message-archive-group "Sent")
-  
-  (setq gnus-ignored-mime-types '("text/x-vcard"))
-  (setq gnus-agent-queue-mail nil)
-  (setq gnus-keep-same-level 't)
-  
-  (setq gnus-summary-ignore-duplicates t)
-  
-  (setq gnus-group-use-permanent-levels 't)
-  (setq gnus-summary-line-format "%-10&user-date;%U%R%z%I%(%[%-23,23f%]%) %s\n")
-  
-  ;; From http://emacs.wordpress.com/2008/04/21/two-gnus-tricks/
-  (setq gnus-user-date-format-alist
-        '(((gnus-seconds-today) . "Today, %H:%M")
-          ((+ 86400 (gnus-seconds-today)) . "Yesterday, %H:%M")
-          (604800 . "%A %H:%M") ;;that's one week
-          ((gnus-seconds-month) . "%A %d")
-          ((gnus-seconds-year) . "%B %d")
-          (t . "%B %d '%y"))) ;;this one is used when no other does match
-  
-  ;; From http://www.emacswiki.org/emacs/init-gnus.el
-  (setq gnus-summary-line-format "%U%R%z%O %{%16&user-date;%}   %{%-20,20n%} %{%ua%} %B %(%I%-60,60s%)\n")
   (defun gnus-user-format-function-a (header) 
-    (let ((myself (concat "<" user-mail-address ">"))
-          (references (mail-header-references header))
-          (message-id (mail-header-id header)))
-      (if (or (and (stringp references)
-                   (string-match myself references))
-              (and (stringp message-id)
-                   (string-match myself message-id)))
-          "X" "│")))
-  
-  (setq gnus-summary-same-subject "")
-  (setq gnus-sum-thread-tree-indent "    ")
-  (setq gnus-sum-thread-tree-single-indent "◎ ")
-  (setq gnus-sum-thread-tree-root "● ")
-  (setq gnus-sum-thread-tree-false-root "☆")
-  (setq gnus-sum-thread-tree-vertical "│")
-  (setq gnus-sum-thread-tree-leaf-with-other "├─► ")
-  (setq gnus-sum-thread-tree-single-leaf "╰─► ")
-  
-  (setq gnus-single-article-buffer nil)
+     (let ((myself (concat "<" user-mail-address ">"))
+           (references (mail-header-references header))
+           (message-id (mail-header-id header)))
+       (if (or (and (stringp references)
+                    (string-match myself references))
+               (and (stringp message-id)
+                    (string-match myself message-id)))
+           "X" "│")))
 #+end_src
 * Terminal
 #+srcname: ahyatt-terminal
