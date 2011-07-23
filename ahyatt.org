@@ -5,26 +5,35 @@
 * Startup sanity
 #+srcname: ahyatt-startup
 #+begin_src emacs-lisp
+  ;; emacs 24 seems to break if I don't do this
+  (require 'eieio)
   ;; This only gets set for real when cc mode is enabled
   (setq c-buffer-is-cc-mode nil)
   
   ;; We don't really want to specify every single directory...
   (let ((default-directory elisp-source-dir))
     (normal-top-level-add-subdirs-to-load-path))
+  
 #+end_src
-* Who am I?
-#+srcname: ahyatt-who
-#+begin_src emacs-lisp 
-  (setq wave-client-user "ahyatt")
-#+end_src
-
 * Coding
 ** My coding style
 #+srcname: ahyatt-coding-style
 #+begin_src emacs-lisp
-  (add-hook 'c-mode-hook 'highlight-80+-mode)
-  (add-hook 'c++-mode-hook 'highlight-80+-mode)
-  (add-hook 'java-mode-hook 'highlight-80+-mode)
+  (require 'fill-column-indicator)
+  (add-hook 'c++-mode-hook (lambda ()
+                             (setq fill-column 80)
+                             (fci-mode 1)))
+  (add-hook 'java-mode-hook (lambda ()
+                              (setq fill-column 100)
+                              (fci-mode 1)))
+  
+#+end_src
+** Shell scripting
+From http://www.masteringemacs.org/articles/2011/01/19/script-files-executable-automatically/
+#+srcname: ahyatt-shell
+#+begin_src emacs-lisp 
+(add-hook 'after-save-hook
+  'executable-make-buffer-file-executable-if-script-p)
 #+end_src
 ** Indent after yank
 #+srcname: ahyatt-coding-indent
@@ -146,21 +155,10 @@ turned on all the time.
   (require 'whattf-dt)
 #+end_src
 
-** Ropemacs
-#+srcname: ahyatt-ropemacs
+** flymake
+#+srcname: ahyatt-flymake
 #+begin_src emacs-lisp 
-  (autoload 'pymacs-apply "pymacs")
-  (autoload 'pymacs-call "pymacs")
-  (autoload 'pymacs-eval "pymacs" nil t)
-  (autoload 'pymacs-exec "pymacs" nil t)
-  (autoload 'pymacs-load "pymacs" nil t)
-  (setq ropemacs-global-prefix "C-x /")
-  (eval-after-load "pymacs"
-    '(add-to-list 'pymacs-load-path "/usr/share/pyshared/Pymacs"))
-  (eval-after-load "python"
-    (progn
-      (pymacs-load "ropemacs" "rope-")
-      (setq ropemacs-enable-autoimport t)))
+  (add-to-list 'ido-ignore-files "flymake.cc")
 #+end_src
 
 * My org setup
@@ -183,8 +181,8 @@ entries in the modeline.
   (setq org-todo-keywords '((sequence "TODO(t)" "STARTED(s)"
                                       "WAITING(w@/!)" "|" "DONE(d)"
                                       "OBSOLETE(o)")
-                            (type "PERMANENT(p)")
-                            (sequence "REVIEW(r)" "SEND(e)" "WAITING FOR REVIEW(i)" "RESPOND(p)" "SUBMIT(u)"
+                            (type "PERMANENT")
+                            (sequence "REVIEW(r)" "SEND(e)" "EXTREVIEW(g)" "RESPOND(p)" "SUBMIT(u)"
                                       "|" "SUBMITTED(b)"))
         org-agenda-custom-commands
         '(("w" todo "WAITING" nil)
@@ -194,7 +192,10 @@ entries in the modeline.
           ("0" "Critical tasks" ((agenda "") (tags-todo "+p0")))
           ("l" "Agenda and live tasks" ((agenda "")
                                         (todo "PERMANENT")
-                                        (tags-todo "-someday"))))
+                                        (todo "WAITING|EXTREVIEW")
+                                        (tags-todo "-someday/!-WAITING-EXTREVIEW")))
+          ("S" "Last week's snippets" tags "TODO=\"DONE\"+CLOSED>=\"<-1w>\""
+           ((org-agenda-overriding-header "Last week's completed TODO: "))))
         org-enforce-todo-dependencies t
         org-agenda-todo-ignore-scheduled t
         org-agenda-dim-blocked-tasks 'invisible
@@ -206,8 +207,14 @@ entries in the modeline.
                                    (todo . " %i %-18:c")
                                    (tags . " %i %-18:c")
                                    (search . " %i %-18:c"))
+        org-use-property-inheritance t
         org-agenda-clockreport-parameter-plist
         '(:maxlevel 2 :link nil :scope ("~/org/work.org")))
+  
+  ;; I like to cycle in the agenda instead of jump to state
+  ;;  (defadvice org-agenda-todo (before ash-agenda-todo-prefer-cycling
+  ;;                                   activate)
+  ;; (ad-set-arg 0 (if (ad-get-arg 0) nil 'right)))
   
 #+end_src
 
@@ -249,8 +256,9 @@ entries in the modeline.
           ("a" "Act on email" entry
            (file+headline "~/org/work.org" "Inbox")
            "* TODO Process [%a]\n" :immediate-finish t)))
-  (setq org-default-notes-file (concat org-directory "/work.org"))
+  (setq org-default-notes-file "~/work/work.org")
   (define-key global-map [f12] 'org-capture)
+  
 #+end_src
 *** Jabber integration
 Some code to colorize tags that are jabber names based on
@@ -289,6 +297,21 @@ availability.
 #+begin_src emacs-lisp
   (setq org-timer-default-timer 30)
 #+end_src
+*** Babel
+#+srcname: ahyatt-babel
+#+begin_src emacs-lisp 
+  (setq org-export-babel-evaluate nil)
+#+end_src
+
+*** Org for gnus
+#+srcname: ahyatt-org-mime
+#+begin_src emacs-lisp
+  (require 'org-mime)
+  (setq org-mime-library 'mml)
+  (add-hook 'message-mode-hook 'turn-on-orgstruct++)
+  (add-hook 'message-mode-hook 'turn-on-orgtbl)
+#+end_src
+
 *** Org functions (to submit as patch)
 #+srcname: ahyatt-org-functions
 #+begin_src emacs-lisp 
@@ -399,7 +422,9 @@ again.
       (progn
         (require 'edit-server)
         (edit-server-start)))
-  
+
+  (require 'ace-jump-mode)
+  (define-key global-map (quote [Scroll_Lock]) 'ace-jump-mode)
 #+end_src
 * Keychord
 #+srcname: ahyatt-keychord
@@ -424,8 +449,10 @@ This is for gnus customization, not anything server-specific.
   (autoload 'gnus "gnus-load" nil t)
   
   (eval-after-load "gnus"
-    ;; gnus-agent and nnimap don't always work well together
-    (setq gnus-agent nil
+    ;; gnus-agent and nnimap don't always work well together,
+    ;; but maybe things have gotten better.  Setting to 't again, if it
+    ;; fails again let's record why.
+    (setq gnus-agent t
           bbdb-always-add-addresses 'ash-add-addresses-p
           bbdb-complete-name-allow-cycling t
           bbdb-completion-display-record nil
@@ -465,7 +492,8 @@ This is for gnus customization, not anything server-specific.
           gnus-sum-thread-tree-vertical "│"
           gnus-sum-thread-tree-leaf-with-other "├─► "
           gnus-sum-thread-tree-single-leaf "╰─► "
-          gnus-single-article-buffer nil))
+          gnus-single-article-buffer nil
+          gnus-suppress-duplicates t))
   
   (defun gnus-user-format-function-a (header) 
      (let ((myself (concat "<" user-mail-address ">"))
@@ -476,6 +504,7 @@ This is for gnus customization, not anything server-specific.
                (and (stringp message-id)
                     (string-match myself message-id)))
            "X" "│")))
+  
 #+end_src
 * Terminal
 #+srcname: ahyatt-terminal
@@ -503,6 +532,9 @@ This is for gnus customization, not anything server-specific.
 #+srcname: ahyatt-speed
 #+begin_src emacs-lisp 
   (setq ido-enable-tramp-completion nil)
+  
+  ;; from http://www.method-combination.net/blog/archives/2011/03/11/speeding-up-emacs-saves.htlm
+  (setq vc-handled-backends nil)
 #+end_src
 * ERC
 I used ERC primarily with bitlbee.  But it kind of sucks, having some
@@ -549,12 +581,12 @@ actually fix this as much as it should.
 Because ERC kind of sucks
 #+srcname: ahyatt-rcirc
 #+begin_src emacs-lisp 
+  (setq rcirc-max-message-length 5000)
   (eval-after-load "rcirc"
     '(progn (add-hook 'rcirc-mode-hook (lambda () 'rcirc-omit-mode))
             (add-hook 'rcirc-mode-hook (lambda () (flyspell-mode 1)))
             (add-hook 'rcirc-mode-hook (lambda () (rcirc-track-minor-mode 1)))
             (defun rcirc-handler-MODE (process sender args text))))
-  
 #+end_src
 ** Auto-away mode
 #+srcname: ahyatt-rcirc-autoaway
@@ -588,6 +620,11 @@ Because ERC kind of sucks
   (run-with-idle-timer rcirc-auto-away-after t 'rcirc-auto-away)
   ;;(cancel-function-timers 'rcirc-auto-away)
 #+end_src
+* Minimalism
+#+srcname: ahyatt-minimalism
+#+begin_src emacs-lisp 
+  (scroll-bar-mode -1)
+#+end_src
 * Bookmarks
 I like bookmarks to be saved regularly
 #+srcname: ahyatt-bookmarks
@@ -595,27 +632,36 @@ I like bookmarks to be saved regularly
   ; Save every time things are changed
   (setq bookmark-save-flag 1)
 #+end_src
+* Edit mode
+For the Chrome extension
+#+srcname: ahyatt-edit-mode
+#+begin_src emacs-lisp 
+  (add-hook 'edit-server-text-mode-hook (lambda () (longlines-mode 1)))
+  (add-hook 'edit-server-text-mode-hook (lambda () (flyspell-mode 1)))
+#+end_src
+
 * Anything
 My anything-config, which is fast and general
 #+srcname: ahyatt-anything
 #+begin_src emacs-lisp 
-  (require 'anything)
-  (require 'anything-config)
+  ;; (require 'anything)
+  ;; (require 'anything-config)
   
-  (setq anything-sources
-        (remove-duplicates (append anything-for-files-prefered-list
-                                   '(anything-c-source-buffers+
-                                     anything-c-source-imenu
-                                     anything-c-source-info-emacs
-                                     anything-c-source-org-keywords
-                                     anything-c-source-info-org
-                                     anything-c-source-info-cl
-                                     anything-c-source-info-elisp))))
+  ;; (setq anything-sources
+  ;;       (remove-duplicates (append anything-for-files-prefered-list
+  ;;                                  '(anything-c-source-buffers+
+  ;;                                    anything-c-source-imenu
+  ;;                                    anything-c-source-info-emacs
+  ;;                                    anything-c-source-org-keywords
+  ;;                                    anything-c-source-info-org
+  ;;                                    anything-c-source-info-cl
+  ;;                                    anything-c-source-info-elisp))))
   
-  ;; This makes sense on kinesys keyboards
-  (key-chord-define-global "=1" 'anything)
-  ;; This makes sense on normal keyboards
-  (key-chord-define-global "`1" 'anything)
+  ;; ;; This makes sense on kinesys keyboards
+  ;; (key-chord-define-global "=1" 'anything)
+  ;; ;; This makes sense on normal keyboards
+  ;; (key-chord-define-global "`1" 'anything)
+  
 #+end_src
 
 * Breadcrumb
@@ -641,40 +687,49 @@ My anything-config, which is fast and general
 * Autocomplete
 #+srcname: ahyatt-autocomplete
 #+begin_src emacs-lisp 
+  (message "autocomplete")
   (add-to-list 'load-path "~/.emacs.d/auto-complete")
   (require 'auto-complete-config)
   (add-to-list 'ac-dictionary-directories "~/.emacs.d/auto-complete/ac-dict")
   (ac-config-default)
 #+end_src
 
-* Prettiness
-Color themes I like:
-  - Alice Blue: nice use of fonts
-  - GTK IDE: subdued, interested
-  - Lethe: dark & colorful
-  - Linh Dang Dark: dark, nice fonts
-#+srcname: ahyatt-pretiness
-#+begin_src emacs-lisp
-  (set-face-background 'default "gray95")
-  (set-face-background 'minibuffer-prompt "yellow")
-  (set-face-foreground 'minibuffer-prompt "black")
-  (set-face-foreground 'font-lock-negation-char-face "red")
-  (set-face-attribute 'font-lock-function-name-face nil :underline t)
-  (set-face-attribute 'font-lock-variable-name-face nil :family "Monaco" :height 130 :weight 'bold)
-  (set-face-attribute 'mode-line nil :family "Tlwg Typist" :height 100)
-  (set-face-attribute 'font-lock-comment-face nil :weight 'bold)
-  (set-face-attribute 'font-lock-function-name-face nil :weight 'bold)
-  
-  (set-face-attribute 'default nil :family "Inconsolata" :height 140)
-  
-  (eval-after-load "jabber"
-    '(add-hook 'jabber-chat-mode-hook (lambda () (variable-pitch-mode t))))
-  (eval-after-load "wl"
-   '(progn
-      (set-face-attribute 'wl-highlight-message-cited-text-1 nil :height 120)
-      (set-face-attribute 'wl-highlight-message-cited-text-2 nil :height 120)
-      (set-face-attribute 'wl-highlight-message-cited-text-3 nil :height 120)
-      (set-face-attribute 'wl-highlight-message-cited-text-4 nil :height 120)
-      (set-face-attribute 'wl-highlight-message-cited-text-5 nil :height 120)
-      (add-hook 'wl-message-buffer-created-hook (lambda () (variable-pitch-mode t)))))
+* Mode line cleanup
+All those modes and minor modes in the modeline just clutter up
+things.  Remove them.
+#+srcname: ahyatt-modeline
+#+begin_src emacs-lisp 
+  (setq mode-line-modes nil)
 #+end_src
+* Prettiness
+** Text size changes
+#+srcname: ahyatt-fontsize
+#+begin_src emacs-lisp 
+  (defun ash-set-frame-font-points (points)
+    (interactive "nPoints: ")
+    (set-frame-parameter (selected-frame) 'font (concat "Mensch-" (int-to-string points))))
+  
+#+end_src
+
+** Sane color theme
+#+srcname: ahyatt-sane-color-theme
+#+begin_src emacs-lisp
+  ;; what about custom-theme-load-path?
+  (add-to-list 'load-path "~/.emacs.d/src/emacs-color-theme-solarized/")
+  (add-to-list 'custom-theme-load-path "~/.emacs.d/src/emacs-color-theme-solarized")
+  (defun ash-reapply-theme (frame)
+    (save-excursion
+      (dolist (theme custom-enabled-themes)
+        (enable-theme theme))))
+  ;; (add-hook 'after-make-frame-functions
+  ;;           'ash-reapply-theme)
+  (setq color-theme-is-global nil)
+#+end_src
+* Buffer cleanup
+#+srcname: ahyatt-cleanup
+#+begin_src emacs-lisp
+  (message "midnight")
+  (require 'midnight)
+  (setq clean-buffer-list-delay-general 2)
+#+end_src
+

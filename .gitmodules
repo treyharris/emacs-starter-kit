@@ -26,3 +26,15 @@
 [submodule "src/pymacs"]
 	path = src/pymacs
 	url = https://github.com/pinard/Pymacs.git
+[submodule "src/undo-tree"]
+	path = src/undo-tree
+	url = http://www.dr-qubit.org/git/undo-tree.git
+[submodule "src/naquadah-theme"]
+	path = src/naquadah-theme
+	url = git://git.naquadah.org/naquadah-theme.git
+[submodule "src/emacs24-solarized"]
+	path = src/emacs24-solarized
+	url = https://github.com/cycojesus/emacs24-solarized.git
+[submodule "src/ace-jump-mode"]
+	path = src/ace-jump-mode
+	url = git://github.com/winterTTr/ace-jump-mode.git
