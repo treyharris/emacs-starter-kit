@@ -15,18 +15,26 @@
     (normal-top-level-add-subdirs-to-load-path))
   
 #+end_src
+* ELPA
+#+srcname: ahyatt-elpa
+#+begin_src emacs-lisp 
+  (setq package-archives '(("ELPA" . "http://tromey.com/elpa/") 
+                           ("gnu" . "http://elpa.gnu.org/packages/")))
+    
+#+end_src
+
 * Coding
 ** My coding style
 #+srcname: ahyatt-coding-style
 #+begin_src emacs-lisp
   (require 'fill-column-indicator)
+  (setq fci-style 'rule)
   (add-hook 'c++-mode-hook (lambda ()
                              (setq fill-column 80)
                              (fci-mode 1)))
   (add-hook 'java-mode-hook (lambda ()
                               (setq fill-column 100)
                               (fci-mode 1)))
-  
 #+end_src
 ** Shell scripting
 From http://www.masteringemacs.org/articles/2011/01/19/script-files-executable-automatically/
@@ -207,6 +215,7 @@ entries in the modeline.
                                    (todo . " %i %-18:c")
                                    (tags . " %i %-18:c")
                                    (search . " %i %-18:c"))
+        org-archive-location "~/org/notes.org::datetree/* Archived"
         org-use-property-inheritance t
         org-agenda-clockreport-parameter-plist
         '(:maxlevel 2 :link nil :scope ("~/org/work.org")))
@@ -245,7 +254,7 @@ entries in the modeline.
 #+begin_src emacs-lisp
   (setq org-capture-templates
         '(("n" "Note" entry
-           (file+headline "~/org/work.org" "Unfiled notes")
+           (file+headline "~/org/notes.org" "Unfiled notes")
            "* %a%?\n%u\n%i")
           ("j" "Journal" entry
            (file+datetree "~/org/notes.org")
@@ -319,14 +328,34 @@ availability.
     (interactive)
     (save-excursion
       (org-clock-jump-to-current-clock)
+      (switch-to-buffer (marker-buffer org-clock-marker))
       (org-up-heading-all 1)
       (org-narrow-to-subtree)))
   
+  (defun org-widen-up ()
+    (interactive)
+    (widen)
+    (org-up-heading-all 2)
+    (org-narrow-to-subtree))
+  
+  (define-key global-map "\C-coj" 'org-narrow-to-clocked-project)
+  (define-key global-map "\C-cou" 'org-widen-up)
+  
+#+end_src
+
+* X-Windows
+We may want to conditionalize these things on a frame-by-frame basis (if that's even possible).
+#+srcname: ahyatt-x
+#+begin_src emacs-lisp 
+  (setq x-select-enable-clipboard t)
+  (setq interprogram-paste-function 'x-cut-buffer-or-selection-value)
 #+end_src
 
 * Misc customization
 #+srcname: ahyatt-misc
 #+begin_src emacs-lisp
+  (setq enable-recursive-minibuffers t)
+  (setq redisplay-dont-pause t)  
   (setq x-select-enable-clipboard t)
   (savehist-mode 1)
   (recentf-mode 1)
@@ -422,9 +451,12 @@ again.
       (progn
         (require 'edit-server)
         (edit-server-start)))
-
+  
   (require 'ace-jump-mode)
   (define-key global-map (quote [Scroll_Lock]) 'ace-jump-mode)
+  (define-key global-map (kbd "C-'") 'ace-jump-char-mode)
+  
+  (setq ido-use-virtual-buffers t)
 #+end_src
 * Keychord
 #+srcname: ahyatt-keychord
@@ -692,6 +724,18 @@ My anything-config, which is fast and general
   (require 'auto-complete-config)
   (add-to-list 'ac-dictionary-directories "~/.emacs.d/auto-complete/ac-dict")
   (ac-config-default)
+  
+  (defun ielm-auto-complete ()
+    "Enables `auto-complete' support in \\[ielm]."
+    (setq ac-sources '(ac-source-functions
+                       ac-source-variables
+                       ac-source-features
+                       ac-source-symbols
+                       ac-source-words-in-same-mode-buffers))
+    (add-to-list 'ac-modes 'inferior-emacs-lisp-mode)
+    (auto-complete-mode 1))
+  (add-hook 'ielm-mode-hook 'ielm-auto-complete)
+  (add-hook 'ielm-mode-hook (lambda () (paredit-mode 1)))
 #+end_src
 
 * Mode line cleanup
@@ -731,5 +775,25 @@ things.  Remove them.
   (message "midnight")
   (require 'midnight)
   (setq clean-buffer-list-delay-general 2)
+#+end_src
+
+* Mark fixup
+From http://www.masteringemacs.org/articles/2010/12/22/fixing-mark-commands-transient-mark-mode/
+#+srcname: ahyatt-mark
+#+begin_src emacs-lisp 
+  (defun push-mark-no-activate ()
+    "Pushes `point' to `mark-ring' and does not activate the region
+  Equivalent to \\[set-mark-command] when \\[transient-mark-mode] is disabled"
+    (interactive)
+    (push-mark (point) t nil)
+    (message "Pushed mark to ring"))
+  (global-set-key (kbd "C-;") 'push-mark-no-activate)
+  (defun jump-to-mark ()
+    "Jumps to the local mark, respecting the `mark-ring' order.
+  This is the same as using \\[set-mark-command] with the prefix argument."
+    (interactive)
+    (set-mark-command 1))
+  (global-set-key (kbd "C-:") 'jump-to-mark)
+  
 #+end_src
 
