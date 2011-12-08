@@ -18,9 +18,11 @@
 * ELPA
 #+srcname: ahyatt-elpa
 #+begin_src emacs-lisp 
-  (setq package-archives '(("ELPA" . "http://tromey.com/elpa/") 
-                           ("gnu" . "http://elpa.gnu.org/packages/")))
+  (setq package-archives '(("ELPA" . "http://tromey.com/elpa/")
+                           ("gnu" . "http://elpa.gnu.org/packages/")
+                           ("marmalade" . "http://marmalade-repo.org/packages/")))
     
+  
 #+end_src
 
 * Coding
@@ -31,10 +33,16 @@
   (setq fci-style 'rule)
   (add-hook 'c++-mode-hook (lambda ()
                              (setq fill-column 80)
-                             (fci-mode 1)))
+                             (fci-mode 1)
+                             (electric-pair-mode)
+                             ;; compatible with fci-mode
+                             (setq whitespace-style '(face trailing))))
   (add-hook 'java-mode-hook (lambda ()
                               (setq fill-column 100)
-                              (fci-mode 1)))
+                              (fci-mode 1)
+                              (electric-pair-mode)))
+  
+  
 #+end_src
 ** Shell scripting
 From http://www.masteringemacs.org/articles/2011/01/19/script-files-executable-automatically/
@@ -215,10 +223,12 @@ entries in the modeline.
                                    (todo . " %i %-18:c")
                                    (tags . " %i %-18:c")
                                    (search . " %i %-18:c"))
+        org-modules '(org-bbdb org-docview org-info org-jsinfo org-wl org-habit)
         org-archive-location "~/org/notes.org::datetree/* Archived"
         org-use-property-inheritance t
         org-agenda-clockreport-parameter-plist
         '(:maxlevel 2 :link nil :scope ("~/org/work.org")))
+  
   
   ;; I like to cycle in the agenda instead of jump to state
   ;;  (defadvice org-agenda-todo (before ash-agenda-todo-prefer-cycling
@@ -330,7 +340,8 @@ availability.
       (org-clock-jump-to-current-clock)
       (switch-to-buffer (marker-buffer org-clock-marker))
       (org-up-heading-all 1)
-      (org-narrow-to-subtree)))
+      (org-narrow-to-subtree)
+      (org-clock-jump-to-current-clock)))
   
   (defun org-widen-up ()
     (interactive)
@@ -403,6 +414,10 @@ We may want to conditionalize these things on a frame-by-frame basis (if that's 
   
   (define-key global-map "\C-x\C-j" 'dired-jump)
   (setq nxml-slash-auto-complete-flag t)
+  
+  ;;  (eval-after-load 'yasnippet
+  ;;    (setq yas/prompt-functions '(yas/ido-prompt)))
+  
 #+end_src
 * Jabber customizations
 I've stopped using Jabber, since it seems to slow down emacs,
@@ -751,8 +766,7 @@ things.  Remove them.
 #+begin_src emacs-lisp 
   (defun ash-set-frame-font-points (points)
     (interactive "nPoints: ")
-    (set-frame-parameter (selected-frame) 'font (concat "Mensch-" (int-to-string points))))
-  
+    (set-frame-parameter (selected-frame) 'font (concat "Monaco-" (int-to-string points))))
 #+end_src
 
 ** Sane color theme
@@ -797,3 +811,11 @@ From http://www.masteringemacs.org/articles/2010/12/22/fixing-mark-commands-tran
   
 #+end_src
 
+* Which-func
+From http://www.masteringemacs.org/articles/2011/11/19/which-function-mode/
+#+srcname: ahyatt-whichfunc
+#+begin_src emacs-lisp 
+  (require 'which-func)
+  (add-to-list 'which-func-modes 'org-mode)
+  (which-func-mode 1)
+#+end_src
