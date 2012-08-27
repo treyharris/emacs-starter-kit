@@ -22,6 +22,7 @@
   (require 'org-install))
 
 ;; load up the main file
+(require 'ob-tangle)
 (org-babel-load-file (expand-file-name "starter-kit.org" dotfiles-dir))
 
 ;;; init.el ends here
