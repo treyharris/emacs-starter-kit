@@ -1,6 +1,6 @@
 [submodule "src/org"]
 	path = src/org
-	url = git://repo.or.cz/org-mode.git
+	url = git://orgmode.org/org-mode.git
 [submodule "src/magit"]
 	path = src/magit
 	url = git://gitorious.org/magit/mainline.git
@@ -12,7 +12,7 @@
 	url = git://github.com/eschulte/auctex.git
 [submodule "src/anything"]
 	path = src/anything
-	url = https://github.com/emacsmirror/anything.git
+	url = git://github.com/emacs-helm/helm.git
 [submodule "src/jabber"]
 	path = src/jabber
 	url = git://emacs-jabber.git.sourceforge.net/gitroot/emacs-jabber/emacs-jabber
